@@ -129,11 +129,11 @@ function makeDog(imgs, parts, opt){
     var q=pose(p);ctx.save();ctx.translate(x,gy);ctx.scale(scale,scale);ctx.translate(0,q.y-(lift||0));
     var neck=rot(NECK,q.pitch),tl=rot(TAILP,q.pitch);
     function leg(u,l,at,ang,ch,dk){piece(ctx,l,ch.k,ang.lo,dk);piece(ctx,u,at,ang.up,dk)}
-    piece(ctx,'tail',[tl[0]+14,tl[1]+10],-25+9*Math.sin(T*4*p)+q.pitch,true,0.42);
     leg('fu','fl',add(q.sho,FAR),q.ff,q.b,true);leg('hu','hl',add(q.hip,FAR),q.fh,q.d,true);
     piece(ctx,'torso',[0,0],q.pitch);
+    piece(ctx,'tail',[tl[0]-10,tl[1]+26],-55+9*Math.sin(T*4*p)+q.pitch,false,0.65);   // Frenchie stub curling off the rump, quick wag
     leg('hu','hl',q.hip,q.nh,q.c,false);leg('fu','fl',q.sho,q.nf,q.a,false);
-    piece(ctx,'head',[neck[0]-14,neck[1]+16],11-q.pitch*0.6+2*Math.sin(T*2*p+1));
+    piece(ctx,'head',[neck[0]-46,neck[1]+62],6-q.pitch*0.6+2*Math.sin(T*2*p+1));   // nose level, head set down into the shoulders
     ctx.restore()}
   return {draw:draw,stride:stride}
 }
