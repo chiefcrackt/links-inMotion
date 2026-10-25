@@ -183,20 +183,22 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   <footer class="on" style="--i:13"><i></i>tristan.inmotion</footer>
 </main>
 <script>
-/* Grid floor: drawn each frame so the lines roll toward you at the speed the runner's feet push back */
+/* Grid floor: the runner faces right, so the floor slides left under his feet.
+   Depth lines pivot on the vanishing point (so they move faster up close); horizontal lines stay put. */
 (function(){
   var cv=document.querySelector('.scene .grid');if(!cv)return;
-  var ctx=cv.getContext('2d'),w=0,h=0,dpr=1,phase=0,last=0,on=true;
+  var ctx=cv.getContext('2d'),w=0,h=0,dpr=1,off=0,last=0,on=true;
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var SPEED=2.35; /* depth units per second */
+  var SPEED=180; /* px per second at the bottom edge, tuned to the stride */
   function size(){var r=cv.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);w=r.width;h=r.height;cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
   function draw(){
-    ctx.clearRect(0,0,w,h);ctx.lineWidth=1.5;var cx=w/2,sp=w/7;
-    for(var k=-14;k<=14;k++){ctx.strokeStyle='rgba(46,155,173,.55)';ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx+k*sp*1.6,h*1.6);ctx.stroke()}
-    for(var n=0;n<40;n++){var z=n+1-phase;if(z<0.85)continue;var y=h/z;if(y<1.5)break;
+    ctx.clearRect(0,0,w,h);ctx.lineWidth=1.5;var cx=w/2,sp=w/4;
+    ctx.strokeStyle='rgba(46,155,173,.55)';
+    for(var k=-16;k<=16;k++){var xb=cx+k*sp-off;ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx+(xb-cx)*1.6,h*1.6);ctx.stroke()}
+    for(var n=0;n<40;n++){var y=h/(n+.55);if(y>h+1)continue;if(y<1.5)break;
       ctx.strokeStyle='rgba(46,155,173,'+Math.min(.85,.15+y/h*.8).toFixed(3)+')';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
   }
-  function tick(t){if(!on){last=0;return}if(last)phase=(phase+(t-last)/1000*SPEED)%1;last=t;draw();requestAnimationFrame(tick)}
+  function tick(t){if(!on){last=0;return}if(last)off=(off+(t-last)/1000*SPEED)%(w/4||1);last=t;draw();requestAnimationFrame(tick)}
   size();draw();window.addEventListener('resize',function(){size();draw()});
   if(still)return;
   if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(tick)}on=v}).observe(cv)}
