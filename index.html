@@ -92,8 +92,8 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
   -webkit-mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%);
           mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%)}
 .scene .far,.scene .near{left:0;right:0;background-repeat:repeat-x;background-position:0 100%}
-.scene .far{bottom:calc(38% + 9px);height:64px;background-image:url(scene/ridge-far.svg);background-size:600px 64px;animation:far 118s linear infinite}
-.scene .near{bottom:calc(38% + 8px);height:46px;background-image:url(scene/ridge-near.svg);background-size:560px 46px;animation:near 45s linear infinite}
+.scene .far{bottom:calc(38% + 9px);height:64px;background-image:url(scene/ridge-far.svg?v=3);background-size:600px 64px;animation:far 118s linear infinite}
+.scene .near{bottom:calc(38% + 8px);height:46px;background-image:url(scene/ridge-near.svg?v=3);background-size:560px 46px;animation:near 45s linear infinite}
 .scene .river{left:0;right:0;bottom:38%;height:10px;background:linear-gradient(#0B1A2E,#123049)}
 .scene .glint{left:50%;bottom:38%;width:150px;height:10px;margin-left:-75px;
   background:repeating-linear-gradient(#E8C96A 0 1.5px,transparent 1.5px 3.5px);opacity:.75;
@@ -182,5 +182,5 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
 
   <footer class="on" style="--i:13"><i></i>tristan.inmotion</footer>
 </main>
-<script src="scene/runner.js"></script>
+<script src="scene/runner.js?v=3"></script>
 </body></html>

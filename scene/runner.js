@@ -16,26 +16,30 @@ function makePuppet(imgs, parts, opt){
   var FAR_SH=opt.farShoulder||[10,4], FAR_HIP=opt.farHip||[10,-6];
   var HIP =[ 28,  14,   0, -20, -27, -12,  18,  38];
   var KNEE=[ 12,  38,  22,  10,  42, 100, 106,  72];
-  var FOOT=[-12,   0,   0,  24,  50,  44,  22,  -2];
+  var PF  =[  4, -24, -22,  10,  28,  18,   2, -18];   // ankle: + = toes pointed, - = toes pulled up
   var ARM =[-44, -34, -12,  14,  28,  20,   0, -26];
   var ELB =[ 80,  82,  86,  92,  96,  92,  86,  82];
   function cr(k,p){var n=k.length,x=((p%1)+1)%1*n,i=Math.floor(x),t=x-i,a=k[(i-1+n)%n],b=k[i%n],c=k[(i+1)%n],d=k[(i+2)%n];
     return 0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)}
   function pt(o,l,a){return [o[0]+l*Math.sin(a*R),o[1]+l*Math.cos(a*R)]}
   var sole=parts.shoe.sole.map(function(q){return [q[0]*SHOE_SCALE,q[1]*SHOE_SCALE]});
-  function leg(p,h){var hip=cr(HIP,p),shin=hip-cr(KNEE,p),foot=cr(FOOT,p),k=pt(h,TH.len,hip),an=pt(k,SN.len,shin),low=-1e9;
+  function leg(p,h){var hip=cr(HIP,p),shin=hip-cr(KNEE,p),foot=-shin+cr(PF,p),k=pt(h,TH.len,hip),an=pt(k,SN.len,shin),low=-1e9;
     sole.forEach(function(q){var r=rot(q,foot);low=Math.max(low,an[1]+r[1])});return {hip:hip,shin:shin,foot:foot,k:k,an:an,low:low}}
   function lift(p){var u=((p%0.5)+0.5)%0.5;return u>0.34&&u<0.5?22*Math.sin(Math.PI*(u-0.34)/0.16):0}
   var N=240,ys=[];for(var i=0;i<N;i++){var p=i/N,a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP);ys.push(-Math.max(a.low,b.low)-lift(p))}
   function hipY(p){var x=((p%1)+1)%1*N,i=Math.floor(x),t=x-i;return ys[i%N]*(1-t)+ys[(i+1)%N]*t}
   var groundSpeed=(leg(0.06,[0,0]).an[0]-leg(0.31,[0,0]).an[0])/0.25;
   var K=opt.imgScale||1;   // pieces are stored smaller than the source; joints stay in source units
-  function piece(ctx,name,at,angle,sc){var info=parts[name]||parts[name.replace('_far','')];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(angle*R);if(sc)ctx.scale(sc,sc);
-    ctx.scale(1/K,1/K);ctx.drawImage(imgs[name],-info.pivot[0]*K,-info.pivot[1]*K);ctx.restore()}
-  function drawLeg(ctx,q,h,shade){ctx.save();if(shade)ctx.filter='brightness(0.72)';
-    piece(ctx,'shin',q.k,SN.rest-q.shin);piece(ctx,'shoe',q.an,q.foot,SHOE_SCALE);piece(ctx,'thigh',h,TH.rest-q.hip);ctx.restore()}
-  function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),fo=sw+cr(ELB,p),e=pt(sh,UA.len,sw);ctx.save();if(shade)ctx.filter='brightness(0.72)';
-    piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo);piece(ctx,'upperarm',sh,UA.rest-sw);ctx.restore()}
+  var darkCache={};
+  function dark(name){if(darkCache[name])return darkCache[name];var src=imgs[name],c=document.createElement('canvas');
+    c.width=src.naturalWidth||src.width;c.height=src.naturalHeight||src.height;var x=c.getContext('2d');x.drawImage(src,0,0);
+    x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.32)';x.fillRect(0,0,c.width,c.height);return darkCache[name]=c}
+  function piece(ctx,name,at,angle,sc,shade){var info=parts[name]||parts[name.replace('_far','')];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(angle*R);if(sc)ctx.scale(sc,sc);
+    ctx.scale(1/K,1/K);ctx.drawImage(shade?dark(name):imgs[name],-info.pivot[0]*K,-info.pivot[1]*K);ctx.restore()}
+  function drawLeg(ctx,q,h,shade){
+    piece(ctx,'shin',q.k,SN.rest-q.shin,0,shade);piece(ctx,'shoe',q.an,q.foot,SHOE_SCALE,shade);piece(ctx,'thigh',h,TH.rest-q.hip,0,shade)}
+  function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),fo=sw+cr(ELB,p),e=pt(sh,UA.len,sw);
+    piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade)}
   // Core motion. q = step phase (two steps per cycle). Landing is near q=0.25 (the "down" pose).
   function core(p){var T=Math.PI*2,q=p*2;
     return {
@@ -119,6 +123,6 @@ function makePuppet(imgs, parts, opt){
   function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(still)return;
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
-  names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp';imgs[n]=i});
+  names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
