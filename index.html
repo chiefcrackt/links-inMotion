@@ -133,6 +133,24 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;animation-delay:calc(.55s + var(--i,0) * 90ms),1.6s}
 @keyframes on{0%{opacity:0}20%{opacity:.7;transform:translateX(-4px)}35%{opacity:.15}55%{opacity:1;transform:translateX(2px)}70%{transform:none;opacity:1}100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.badge .w,h1,.on,h1.on{animation:none}.on{opacity:1}.boot{display:none}}
+/* Sound toggle: fixed bottom-right, HUD bracket corners, hidden until the loop has loaded */
+.snd{position:fixed;z-index:15;right:max(14px,calc(env(safe-area-inset-right,0px) + 10px));bottom:max(14px,calc(env(safe-area-inset-bottom,0px) + 10px));
+  display:flex;align-items:center;gap:7px;padding:6px 11px 6px 9px;min-height:34px;background:rgba(14,26,46,.82);color:var(--teal);
+  border:1px solid rgba(46,155,173,.6);font-family:var(--display);font-weight:700;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .15s,border-color .15s,background .15s;
+  opacity:0;animation:on .5s steps(1) forwards;animation-delay:1.6s}
+.snd[hidden]{display:none}
+.snd::before,.snd::after{content:"";position:absolute;width:9px;height:9px;border:0 solid currentColor;pointer-events:none}
+.snd::before{left:-4px;top:-4px;border-top-width:2px;border-left-width:2px}
+.snd::after{right:-4px;bottom:-4px;border-bottom-width:2px;border-right-width:2px}
+.snd svg{width:15px;height:15px;flex:none}
+.snd .wv{opacity:0;transition:opacity .15s}
+.snd .x{transition:opacity .15s}
+.snd:hover,.snd:focus-visible,.snd[aria-pressed=true]{color:var(--gold);border-color:var(--gold);outline:none}
+.snd[aria-pressed=true]{background:rgba(232,201,106,.12)}
+.snd[aria-pressed=true] .wv{opacity:1}.snd[aria-pressed=true] .x{opacity:0}
+.snd:active{transform:translateY(1px)}
+@media (prefers-reduced-motion:reduce){.snd{animation:none;opacity:1}}
 </style>
 </head><body>
 
@@ -197,5 +215,39 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
 
   <footer class="on" style="--i:13"><i></i>tristan.inmotion</footer>
 </main>
+<button class="snd" id="snd" type="button" hidden aria-pressed="false" aria-label="Turn background music on"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h2.6L8 3v10L4.6 10H2z" fill="currentColor"/><path class="wv" d="M10.4 5.6a3.4 3.4 0 0 1 0 4.8M12.3 3.8a6 6 0 0 1 0 8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="x" d="M10.5 6l4 4M14.5 6l-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Sound off</span></button>
+<script>
+(function(){
+  var btn=document.getElementById('snd'); if(!btn) return;
+  var AC=window.AudioContext||window.webkitAudioContext; if(!AC||!window.fetch) return;   // stays hidden
+  var LOOP=48.0, VOL=0.45, ctx, buf, src=null, gain, on=false, wasOn=false;
+  try{ ctx=new AC(); }catch(e){ return; }
+  fetch('audio/chill-loop.mp3').then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(function(a){ return new Promise(function(res,rej){ ctx.decodeAudioData(a,res,rej); }); })
+    .then(function(b){ buf=b; gain=ctx.createGain(); gain.gain.value=0; gain.connect(ctx.destination); btn.hidden=false; })
+    .catch(function(){ btn.hidden=true; });
+  function setUI(){ btn.setAttribute('aria-pressed',on?'true':'false'); btn.querySelector('span').textContent=on?'Sound on':'Sound off';
+    btn.setAttribute('aria-label',on?'Turn background music off':'Turn background music on'); }
+  function start(){
+    try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
+    if(ctx.state!=='running') ctx.resume();
+    src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    src.loopStart=0; src.loopEnd=Math.min(buf.duration,LOOP);
+    src.connect(gain);
+    var t=ctx.currentTime; gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(gain.gain.value,t); gain.gain.linearRampToValueAtTime(VOL,t+0.6);
+    src.start(t);
+  }
+  function stop(){
+    if(!src) return; var s=src, t=ctx.currentTime; src=null;
+    gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(gain.gain.value,t); gain.gain.linearRampToValueAtTime(0,t+0.35);
+    try{ s.stop(t+0.4); }catch(e){}
+  }
+  btn.addEventListener('click',function(){ if(!buf) return; on=!on; on?start():stop(); setUI(); });
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){ wasOn=on; if(on&&ctx.state==='running') ctx.suspend(); }
+    else if(wasOn&&on){ ctx.resume(); }
+  });
+})();
+</script>
 <script src="scene/runner.js?v=7"></script>
 </body></html>
