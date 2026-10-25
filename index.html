@@ -77,6 +77,42 @@ h2{margin:0;font-family:var(--display);font-weight:700;font-size:.85rem;letter-s
 footer{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:700;
   letter-spacing:.22em;text-transform:uppercase;font-size:.78rem;color:var(--muted)}
 footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:block}
+/* Run scene: runner loops in place while the city, grid and stars scroll past (layers move at different speeds for depth) */
+.scene{position:relative;height:240px;overflow:hidden;border:1px solid rgba(46,155,173,.28);
+  background:linear-gradient(#0B1526 0%,#13233D 45%,#1B3456 62%,#0E1A2E 62.2%)}
+.scene>*{position:absolute;pointer-events:none}
+.scene .stars{inset:0 0 40% 0;background:
+  radial-gradient(1px 1px at 12% 18%,#F6F4EF 50%,transparent 51%),radial-gradient(1px 1px at 27% 42%,#F6F4EF 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 41% 12%,#E8C96A 50%,transparent 51%),radial-gradient(1px 1px at 63% 30%,#F6F4EF 50%,transparent 51%),
+  radial-gradient(1px 1px at 78% 14%,#F6F4EF 50%,transparent 51%),radial-gradient(1.5px 1.5px at 88% 38%,#2E9BAD 50%,transparent 51%),
+  radial-gradient(1px 1px at 6% 46%,#2E9BAD 50%,transparent 51%),radial-gradient(1px 1px at 53% 48%,#F6F4EF 50%,transparent 51%);
+  background-size:520px 100%;background-repeat:repeat-x;animation:slide 90s linear infinite;opacity:.8}
+.scene .sun{left:50%;top:16px;width:156px;height:156px;margin-left:-78px;border-radius:50%;
+  background:linear-gradient(#E8C96A 25%,#2E9BAD 100%);
+  -webkit-mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%);
+          mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%)}
+.scene .far,.scene .near{left:0;right:0;background-repeat:repeat-x;background-position:0 100%}
+.scene .far{bottom:38%;height:60px;background-image:url(scene/skyline-far.svg);background-size:480px 60px;animation:far 48s linear infinite}
+.scene .near{bottom:38%;height:40px;background-image:url(scene/skyline-near.svg);background-size:560px 40px;animation:near 20s linear infinite}
+.scene .horizon{left:0;right:0;bottom:38%;height:2px;margin-bottom:-1px;background:#2E9BAD;box-shadow:0 0 10px #2E9BAD,0 0 2px #F6F4EF}
+.scene .floor{left:0;right:0;bottom:0;height:38%;perspective:140px;perspective-origin:50% 0;overflow:hidden;background:#0E1A2E}
+.scene .grid{position:absolute;left:-60%;right:-60%;top:0;height:260%;transform-origin:50% 0;transform:rotateX(62deg);
+  background:linear-gradient(rgba(46,155,173,.7) 2px,transparent 2px) 0 0/100% 30px,
+             linear-gradient(90deg,rgba(46,155,173,.55) 2px,transparent 2px) 50% 0/36px 100%;
+  animation:grid .6s linear infinite}
+.scene .floor::after{content:"";position:absolute;inset:0;background:linear-gradient(#0E1A2E 0%,transparent 45%)}
+.scene .shadow{left:50%;bottom:14px;width:84px;height:10px;margin-left:-42px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(2px)}
+.scene .runner{left:50%;bottom:14px;width:106px;height:150px;margin-left:-53px;
+  background:url(scene/runner.webp) 0 0/742px 150px no-repeat;animation:stride .667s steps(7) infinite}
+.scene::before,.scene::after{content:"";position:absolute;z-index:3;width:18px;height:18px;border:0 solid #2E9BAD}
+.scene::before{left:-1px;top:-1px;border-top-width:3px;border-left-width:3px}
+.scene::after{right:-1px;bottom:-1px;border-bottom-width:3px;border-right-width:3px}
+@keyframes stride{to{background-position:-742px 0}}
+@keyframes far{to{background-position:-480px 100%}}
+@keyframes near{to{background-position:-560px 100%}}
+@keyframes slide{to{background-position:-520px 0}}
+@keyframes grid{to{background-position:0 30px,50% 0}}
+@media (prefers-reduced-motion:reduce){.scene *{animation:none!important}}
 /* Power-on: CRT line opens, then each piece boots in order */
 .boot{position:fixed;inset:0;z-index:20;pointer-events:none;background:var(--navy);animation:crt .7s cubic-bezier(.2,.8,.2,1) forwards}
 .boot::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:var(--teal);
@@ -103,6 +139,12 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
     </svg>
     <h1 class="on" style="--i:1">tristan.inmotion</h1>
   </header>
+
+  <div class="scene on" style="--i:1.5" role="img" aria-label="Cartoon Tristan running through a night city under a gold sun">
+    <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div>
+    <div class="floor"><div class="grid"></div></div><div class="horizon"></div>
+    <div class="shadow"></div><div class="runner"></div>
+  </div>
 
 
   <section aria-labelledby="h-watch">
