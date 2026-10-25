@@ -131,7 +131,6 @@ function makeDog(imgs, parts, opt){
     function leg(u,l,at,ang,ch,dk){piece(ctx,l,ch.k,ang.lo,dk);piece(ctx,u,at,ang.up,dk)}
     leg('fu','fl',add(q.sho,FAR),q.ff,q.b,true);leg('hu','hl',add(q.hip,FAR),q.fh,q.d,true);
     piece(ctx,'torso',[0,0],q.pitch);
-    piece(ctx,'tail',[tl[0]-28,tl[1]+4],-15+9*Math.sin(T*4*p)+q.pitch,false,0.9);   // Frenchie stub curling off the rump, quick wag
     leg('hu','hl',q.hip,q.nh,q.c,false);leg('fu','fl',q.sho,q.nf,q.a,false);
     piece(ctx,'head',[neck[0]-46,neck[1]+62],6-q.pitch*0.6+2*Math.sin(T*2*p+1));   // nose level, head set down into the shoulders
     ctx.restore()}
@@ -229,8 +228,8 @@ function makeDog(imgs, parts, opt){
   function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;loadDog();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
-  function loadDog(){var dn=['torso','head','tail','fu','fl','hu','hl'],di={},dl=dn.length;
-    dn.forEach(function(n){var i=new Image();i.onload=function(){if(--dl===0){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw)paw.hidden=false}};
+  function loadDog(){var dn=['torso','head','fu','fl','hu','hl'],di={},dl=dn.length;
+    dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw)paw.hidden=false}};
       i.src='scene/hooper/'+n+'.webp?v=2';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
