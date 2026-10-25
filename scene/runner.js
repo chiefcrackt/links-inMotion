@@ -98,9 +98,10 @@ function makeDog(imgs, parts, opt){
   function add(a,b){return [a[0]+b[0],a[1]+b[1]]}
   var P=parts,tor=P.torso;
   function rel(n){return sub(tor[n],tor.pivot)}
-  var HIP=rel('hip'),SHO=rel('sho'),NECK=rel('neck'),TAILP=rel('tail');
+  var HS=1.12,HIP=[rel('hip')[0]-60,rel('hip')[1]-10],   // hips set back and back legs 12% bigger so the haunch fills the rump
+      SHO=rel('sho'),NECK=rel('neck'),TAILP=rel('tail');
   function bone(n){return sub(P[n].end,P[n].pivot)}
-  var FU=bone('fu'),FL=bone('fl'),HU=bone('hu'),HL=bone('hl'),FAR=[22,-8];
+  var FU=bone('fu'),FL=bone('fl'),HU=bone('hu').map(function(v){return v*HS}),HL=bone('hl').map(function(v){return v*HS}),FAR=[22,-8];
   var dark={};
   function shade(n){if(dark[n])return dark[n];var s=imgs[n],c=document.createElement('canvas');c.width=s.naturalWidth||s.width;c.height=s.naturalHeight||s.height;
     var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.34)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
@@ -128,7 +129,7 @@ function makeDog(imgs, parts, opt){
   function draw(ctx,p,x,gy,scale,lift){
     var q=pose(p);ctx.save();ctx.translate(x,gy);ctx.scale(scale,scale);ctx.translate(0,q.y-(lift||0));
     var neck=rot(NECK,q.pitch),tl=rot(TAILP,q.pitch);
-    function leg(u,l,at,ang,ch,dk){piece(ctx,l,ch.k,ang.lo,dk);piece(ctx,u,at,ang.up,dk)}
+    function leg(u,l,at,ang,ch,dk){var sc=u==='hu'?HS:0;piece(ctx,l,ch.k,ang.lo,dk,sc);piece(ctx,u,at,ang.up,dk,sc)}
     leg('fu','fl',add(q.sho,FAR),q.ff,q.b,true);leg('hu','hl',add(q.hip,FAR),q.fh,q.d,true);
     piece(ctx,'torso',[0,0],q.pitch);
     leg('hu','hl',q.hip,q.nh,q.c,false);leg('fu','fl',q.sho,q.nf,q.a,false);
