@@ -102,7 +102,7 @@ function makeDog(imgs, parts, opt){
   var dark={};
   function shade(n){if(dark[n])return dark[n];var s=imgs[n],c=document.createElement('canvas');c.width=s.naturalWidth||s.width;c.height=s.naturalHeight||s.height;
     var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.34)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
-  function piece(ctx,n,at,ang,dk){var i=P[n];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(ang*R);ctx.scale(1/K,1/K);
+  function piece(ctx,n,at,ang,dk,sc){var i=P[n];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(ang*R);if(sc)ctx.scale(sc,sc);ctx.scale(1/K,1/K);
     ctx.drawImage(dk?shade(n):imgs[n],-i.pivot[0]*K,-i.pivot[1]*K);ctx.restore()}
   // one leg: swing angle (+ = paw forward) and lift while it swings forward
   function legAt(p){p=((p%1)+1)%1;var a=SWING*Math.cos(T*p);           // p 0..0.5 stance (paw moves back), 0.5..1 swing
@@ -119,11 +119,11 @@ function makeDog(imgs, parts, opt){
     var q=pose(p);ctx.save();ctx.translate(x,gy);ctx.scale(scale,scale);ctx.translate(0,q.y-(lift||0));
     var hip=rot(HIP,q.pitch),sho=rot(SHO,q.pitch),neck=rot(NECK,q.pitch),tl=rot(TAILP,q.pitch);
     function leg(n,at,l,dk,far){var o=far?[at[0]+FAR[0],at[1]+FAR[1]-l.lift]:[at[0],at[1]-l.lift];piece(ctx,n,o,l.a,dk)}
-    piece(ctx,'tail',tl,-18*Math.sin(T*3*p)+q.pitch,true);
+    piece(ctx,'tail',[tl[0]+14,tl[1]+10],-25+9*Math.sin(T*4*p)+q.pitch,true,0.42);   // Frenchie stub, quick small wag
     leg('front',sho,q.ff,true,true);leg('hind',hip,q.fh,true,true);
     piece(ctx,'torso',[0,0],q.pitch);
     leg('hind',hip,q.nh,false,false);leg('front',sho,q.nf,false,false);
-    piece(ctx,'head',neck,-q.pitch*0.6+2.5*Math.sin(T*2*p+1));
+    piece(ctx,'head',[neck[0]-14,neck[1]+16],11-q.pitch*0.6+2*Math.sin(T*2*p+1));   // level the nose, seat it lower on the neck
     ctx.restore()}
   return {draw:draw,stride:stride}
 }
