@@ -23,7 +23,14 @@ function makePuppet(imgs, parts, opt){
     return 0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)}
   function pt(o,l,a){return [o[0]+l*Math.sin(a*R),o[1]+l*Math.cos(a*R)]}
   var sole=parts.shoe.sole.map(function(q){return [q[0]*SHOE_SCALE,q[1]*SHOE_SCALE]});
-  function leg(p,h){var hip=cr(HIP,p),shin=hip-cr(KNEE,p),foot=-shin+cr(PF,p),k=pt(h,TH.len,hip),an=pt(k,SN.len,shin),low=-1e9;
+  // Jump state, set by the scene: tuck (0..1 knees up in the air), crouch (0..1 bent knees on the ground),
+  // lift (source px above the ground), w (0..1 how much the jump overrides the stride's own hip height).
+  var J={tuck:0,crouch:0,lift:0,w:0};
+  function mixv(a,b,t){return a+(b-a)*t}
+  function leg(p,h){var hip=cr(HIP,p),kn=cr(KNEE,p),pf=cr(PF,p);
+    if(J.tuck>0){var T=Math.PI*2;hip=mixv(hip,40+10*Math.cos(T*p),J.tuck);kn=mixv(kn,108,J.tuck);pf=mixv(pf,32,J.tuck)}
+    if(J.crouch>0){hip+=14*J.crouch;kn+=34*J.crouch}
+    var shin=hip-kn,foot=-shin+pf,k=pt(h,TH.len,hip),an=pt(k,SN.len,shin),low=-1e9;
     sole.forEach(function(q){var r=rot(q,foot);low=Math.max(low,an[1]+r[1])});return {hip:hip,shin:shin,foot:foot,k:k,an:an,low:low}}
   function lift(p){var u=((p%0.5)+0.5)%0.5;return u>0.34&&u<0.5?22*Math.sin(Math.PI*(u-0.34)/0.16):0}
   var N=240,ys=[];for(var i=0;i<N;i++){var p=i/N,a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP);ys.push(-Math.max(a.low,b.low)-lift(p))}
@@ -38,21 +45,26 @@ function makePuppet(imgs, parts, opt){
     ctx.scale(1/K,1/K);ctx.drawImage(shade?dark(name):imgs[name],-info.pivot[0]*K,-info.pivot[1]*K);ctx.restore()}
   function drawLeg(ctx,q,h,shade){
     piece(ctx,'shin',q.k,SN.rest-q.shin,0,shade);piece(ctx,'shoe',q.an,q.foot,SHOE_SCALE,shade);piece(ctx,'thigh',h,TH.rest-q.hip,0,shade)}
-  function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),fo=sw+cr(ELB,p),e=pt(sh,UA.len,sw);
+  function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),el=cr(ELB,p);
+    if(J.tuck>0){sw=mixv(sw,shade?-20:58,J.tuck);el=mixv(el,shade?70:104,J.tuck)}   // drive the near arm up, far arm back
+    if(J.crouch>0){sw=mixv(sw,-30,J.crouch*0.7)}                                        // arms swing back to load
+    var fo=sw+el,e=pt(sh,UA.len,sw);
     piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade)}
   // Core motion. q = step phase (two steps per cycle). Landing is near q=0.25 (the "down" pose).
   function core(p){var T=Math.PI*2,q=p*2;
     return {
       pelvisTilt: 2.2*Math.sin(T*(q-0.05)),          // pelvis rocks a little with each step
       pelvisShift: 4*Math.cos(T*p),                   // near hip swings forward and back with the near leg
-      torsoLean: LEAN+2.4*Math.sin(T*(q-0.2)),        // leans in a bit more on push-off
+      torsoLean: LEAN+2.4*Math.sin(T*(q-0.2))+12*J.crouch,  // leans in a bit more on push-off (and when crouching to jump)
       squash: 1-0.018*Math.max(0,Math.cos(T*(q-0.25))),// tiny compress on landing
       shoulderTwist: 7*Math.sin(T*(p+0.25)),          // shoulders rotate against the hips
       headCounter: -0.75                              // head undoes most of the torso rock
     }}
   function draw(ctx,p,x,groundY,scale){
     ctx.save();ctx.translate(x,groundY);ctx.scale(scale,scale);
-    var c=core(p),h=[0,hipY(p)];
+    var c=core(p),hy=hipY(p);
+    if(J.w>0){var a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP),ground=-Math.max(a.low,b.low);hy=mixv(hy,ground,J.w)-J.lift}
+    var h=[0,hy];
     // chain: hip -> waist (on the shorts) -> neck/shoulder (on the torso)
     var w=rot(parts.shorts.waist,c.pelvisTilt),waist=[h[0]+w[0],h[1]+w[1]];
     var tA=c.torsoLean;
@@ -69,7 +81,7 @@ function makePuppet(imgs, parts, opt){
     ctx.save();ctx.translate(waist[0],waist[1]);ctx.rotate(tA*R);ctx.scale(1/K,c.squash/K);ctx.drawImage(imgs.torso,-parts.torso.pivot[0]*K,-parts.torso.pivot[1]*K);ctx.restore();
     drawArm(ctx,sh,p,false);
     ctx.restore()}
-  return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY}
+  return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
 }
 
 /* Run scene for the links page: draws the cutout runner and the grid floor each frame, with the floor
@@ -100,15 +112,28 @@ function makePuppet(imgs, parts, opt){
   // Footstrike ripples: spawned when a foot lands, then carried away by the floor
   var ripples=[];
   function drawRipples(gy,dt,floorSpeed){
-    for(var i=ripples.length-1;i>=0;i--){var r=ripples[i];r.t+=dt;r.x-=floorSpeed*dt;if(r.t>0.7){ripples.splice(i,1);continue}
-      var k=r.t/0.7,e=1-Math.pow(1-k,2);
-      rctx.strokeStyle='rgba(46,155,173,'+(0.75*(1-k)).toFixed(3)+')';rctx.lineWidth=1.6*(1-k)+0.6;
-      rctx.beginPath();rctx.ellipse(r.x,gy,6+30*e,1.6+4.5*e,0,0,Math.PI*2);rctx.stroke();
+    for(var i=ripples.length-1;i>=0;i--){var r=ripples[i],L=r.big?1:0.7,z=r.big?2.2:1;r.t+=dt;r.x-=floorSpeed*dt;if(r.t>L){ripples.splice(i,1);continue}
+      var k=r.t/L,e=1-Math.pow(1-k,2);
+      rctx.strokeStyle='rgba(46,155,173,'+(0.75*(1-k)).toFixed(3)+')';rctx.lineWidth=(1.6*(1-k)+0.6)*(r.big?1.4:1);
+      rctx.beginPath();rctx.ellipse(r.x,gy,(6+30*e)*z,(1.6+4.5*e)*z,0,0,Math.PI*2);rctx.stroke();
       rctx.strokeStyle='rgba(232,201,106,'+(0.45*(1-k)).toFixed(3)+')';rctx.lineWidth=1;
-      rctx.beginPath();rctx.ellipse(r.x,gy,3+16*e,1+2.5*e,0,0,Math.PI*2);rctx.stroke()}}
+      rctx.beginPath();rctx.ellipse(r.x,gy,(3+16*e)*z,(1+2.5*e)*z,0,0,Math.PI*2);rctx.stroke()}}
+  // Jump timeline (seconds): crouch, spring up with knees tucked, land with a squash. jt < 0 means not jumping.
+  var jt=-1,JUMP=0.95,HEIGHT=330;
+  function sm(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x)}
+  function updateJump(dt,gy){var J=pp.jump;if(jt<0){J.tuck=J.crouch=J.lift=J.w=0;return}
+    var prev=jt;jt+=dt;var t=jt;
+    J.w=sm(0,0.07,t)*(1-sm(0.82,0.95,t));
+    if(t<0.16){J.crouch=Math.sin(Math.PI/2*t/0.16);J.tuck=0;J.lift=0}
+    else if(t<0.64){var u=(t-0.16)/0.48;J.lift=HEIGHT*4*u*(1-u);J.tuck=Math.pow(Math.sin(Math.PI*u),0.6);J.crouch=Math.max(0,1-u*7)}
+    else{var v=(t-0.64)/(JUMP-0.64);J.lift=0;J.tuck=0;J.crouch=0.85*Math.sin(Math.PI*Math.min(1,v))}
+    if(prev<0.64&&t>=0.64)ripples.push({x:rw/2+4,t:0,big:true});
+    if(t>=JUMP){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
+  function jump(){if(!pp||jt>=0)return;jt=0;if(!on||still){on=true;last=0;requestAnimationFrame(frame)}}
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
-    rctx.fillStyle='rgba(0,0,0,.42)';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26,3.5,0,0,Math.PI*2);rctx.fill();
+    var air=pp.jump.lift/HEIGHT,sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
+    rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
     bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);
@@ -116,11 +141,17 @@ function makePuppet(imgs, parts, opt){
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
     edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){var prev=ph;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;
-      if(ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
-      if(prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
-    drawGrid();drawRunner(dt);requestAnimationFrame(frame)}
-  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(still)return;
+    if(pp){var prev=ph,jumping=jt>=0;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;updateJump(dt);
+      if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
+      if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
+    drawGrid();drawRunner(dt);
+    if(still&&jt<0&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
+    requestAnimationFrame(frame)}
+  var btn=box.querySelector('.jump');
+  if(btn)btn.addEventListener('click',function(e){e.stopPropagation();jump()});
+  box.addEventListener('click',function(e){if(!e.target.closest('a'))jump()});
+  document.addEventListener('keydown',function(e){if((e.key===' '||e.key==='ArrowUp')&&document.activeElement===btn){e.preventDefault();jump()}});
+  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
