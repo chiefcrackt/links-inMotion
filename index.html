@@ -1,5 +1,18 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>T.im Links</title>
+<meta name="description" content="Training toward Pain in Moraine, out loud. Videos, my training log, and the gear I actually use.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chiefcrackt.github.io/links-inMotion/">
+<meta property="og:title" content="tristan.inmotion">
+<meta property="og:description" content="Videos, my training log, and the gear I actually use.">
+<meta property="og:image" content="https://chiefcrackt.github.io/links-inMotion/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="tristan.inmotion badge with teal waves on navy">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0E1A2E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>html,body{margin:0}*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,8 +28,8 @@
 html{background:var(--navy)}
 body{background:var(--navy);color:var(--paper);font-family:var(--body);font-size:16px;line-height:1.5;
   min-height:100%;position:relative;overflow-x:hidden}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 4px)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.09) 0 1px,transparent 1px 4px)}
 .bg{position:fixed;inset:0;pointer-events:none;
   background:
     repeating-linear-gradient(-55deg,rgba(255,255,255,.03) 0 2px,transparent 2px 28px),
@@ -56,7 +69,7 @@ h2{margin:0;font-family:var(--display);font-weight:700;font-size:.85rem;letter-s
 .row:hover::before,.row:hover::after,.row:focus-visible::before,.row:focus-visible::after{opacity:1;border-color:var(--gold)}
 .row:hover .name,.row:focus-visible .name{text-shadow:-3px 0 var(--teal),3px 0 var(--gold)}
 .ico{flex:none;width:34px;height:34px;display:grid;place-items:center;color:var(--gold)}
-.ico svg{width:24px;height:24px}
+.ico svg{width:22px;height:22px}
 .txt{display:flex;flex-direction:column;min-width:0}
 .name{font-family:var(--display);font-weight:700;font-size:1.35rem;line-height:1.05;letter-spacing:.06em;text-transform:uppercase}
 .sub{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}
@@ -64,58 +77,68 @@ h2{margin:0;font-family:var(--display);font-weight:700;font-size:.85rem;letter-s
 footer{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:700;
   letter-spacing:.22em;text-transform:uppercase;font-size:.78rem;color:var(--muted)}
 footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:block}
-@media (prefers-reduced-motion:reduce){.badge .w,h1{animation:none}}
+/* Power-on: CRT line opens, then each piece boots in order */
+.boot{position:fixed;inset:0;z-index:20;pointer-events:none;background:var(--navy);animation:crt .7s cubic-bezier(.2,.8,.2,1) forwards}
+.boot::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:var(--teal);
+  box-shadow:0 0 12px var(--teal),0 0 2px #fff;animation:beam .7s ease-out forwards}
+@keyframes crt{0%,35%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(50% 0 50% 0)}}
+@keyframes beam{0%{transform:scaleX(0)}30%{transform:scaleX(1);opacity:1}100%{opacity:0}}
+.on{opacity:0;animation:on .5s steps(1) forwards;animation-delay:calc(.55s + var(--i,0) * 90ms)}
+h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;animation-delay:calc(.55s + var(--i,0) * 90ms),1.6s}
+@keyframes on{0%{opacity:0}20%{opacity:.7;transform:translateX(-4px)}35%{opacity:.15}55%{opacity:1;transform:translateX(2px)}70%{transform:none;opacity:1}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.badge .w,h1,.on,h1.on{animation:none}.on{opacity:1}.boot{display:none}}
 </style>
 </head><body>
 
 <div class="bg" aria-hidden="true"></div>
+<div class="boot" aria-hidden="true"></div>
 <svg class="wave" viewBox="0 0 1000 20" preserveAspectRatio="none" aria-hidden="true"><path d="M0,0 H1000 V7 C900,18 800,18 700,9 C600,0 500,2 400,11 C300,20 200,18 100,9 C60,5 30,7 0,11 Z" fill="#E8C96A"/></svg>
 
 <main class="wrap">
   <header>
-    <svg class="badge" viewBox="0 0 1179 1187" role="img" aria-label="tristan.inmotion badge">
+    <svg class="badge on" style="--i:0" viewBox="0 0 1179 1187" role="img" aria-label="tristan.inmotion badge">
       <defs><clipPath id="dk"><circle cx="588.5" cy="592" r="566"/></clipPath></defs>
       <circle cx="588.5" cy="592" r="577.5" fill="#011E3C" stroke="#FAB627" stroke-width="30"/>
       <g clip-path="url(#dk)"><g class="w"><g fill="#128AA3" transform="translate(0,29)"><path d="M887.3,662.1 L844.2,662.1 L812.1,659.4 L773.6,652.8 L736.0,643.5 L706.2,634.3 L662.3,618.1 L538.6,563.9 L485.8,543.7 L429.3,527.3 L407.7,522.7 L375.2,517.3 L338.4,514.0 L306.0,513.5 L278.0,514.6 L245.7,518.2 L207.7,525.3 L179.9,532.4 L146.3,542.8 L100.3,560.9 L98.3,560.9 L97.5,559.7 L103.2,552.7 L119.0,538.5 L144.7,520.3 L182.3,499.8 L221.3,482.9 L255.6,472.2 L293.5,464.1 L335.8,459.2 L377.0,458.1 L413.0,459.5 L445.6,462.9 L493.1,471.4 L527.7,479.8 L557.8,488.8 L595.8,501.8 L626.9,513.6 L730.0,555.5 L774.9,571.6 L824.7,585.8 L874.7,594.8 L901.0,597.6 L929.0,598.6 L957.0,597.5 L979.4,594.8 L1006.2,589.7 L1034.1,582.6 L1062.6,572.1 L1086.9,560.5 L1089.5,560.0 L1090.4,560.9 L1088.5,565.0 L1078.5,578.0 L1069.4,587.9 L1057.9,598.4 L1037.9,613.4 L1011.4,628.9 L994.5,637.0 L976.6,644.1 L955.3,650.8 L922.5,658.0 L888.0,662.0 Z"/><path d="M931.2,563.1 L912.0,563.8 L883.6,562.9 L857.7,559.7 L826.9,553.6 L798.5,546.0 L762.4,534.1 L718.2,516.3 L702.5,509.0 L699.8,506.8 L703.5,506.1 L783.6,518.9 L827.1,523.2 L879.0,524.4 L900.0,523.7 L928.0,521.4 L975.4,513.8 L1022.8,501.3 L1042.9,494.3 L1061.8,486.3 L1083.8,475.3 L1106.5,462.0 L1109.4,461.8 L1108.2,465.7 L1098.8,479.3 L1083.9,496.4 L1063.8,514.3 L1041.8,529.3 L1013.8,543.3 L988.9,552.4 L961.5,559.0 L932.0,563.0 Z"/><path d="M684.8,667.2 L679.0,667.8 L647.0,666.5 L603.5,660.0 L576.9,653.6 L539.7,642.8 L462.0,617.5 L417.9,604.6 L372.0,594.5 L330.2,588.2 L302.8,585.8 L278.0,584.9 L249.0,585.7 L220.7,588.2 L193.6,592.2 L173.7,596.3 L145.4,603.9 L123.1,611.5 L120.7,610.9 L127.2,603.7 L139.7,594.3 L164.4,579.9 L188.0,569.5 L216.1,560.6 L250.4,552.9 L284.1,548.7 L318.0,547.7 L353.6,550.0 L385.0,554.5 L414.6,560.8 L440.6,567.9 L468.6,576.9 L511.8,593.8 L608.9,637.7 L640.9,650.6 L682.6,664.9 L685.2,667.0 Z"/></g></g></g>
     </svg>
-    <h1>tristan.inmotion</h1>
+    <h1 class="on" style="--i:1">tristan.inmotion</h1>
   </header>
 
 
   <section aria-labelledby="h-watch">
-    <h2 id="h-watch">Watch</h2>
-    <a class="row" href="https://www.youtube.com/@tristan.inmotion" target="_blank" rel="noopener">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor" stroke="none"/></svg></span>
+    <h2 class="on" style="--i:2" id="h-watch">Watch</h2>
+    <a class="row on" style="--i:3" href="https://www.youtube.com/@tristan.inmotion" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></span>
       <span class="txt"><span class="name">YouTube</span><span class="sub">@tristan.inmotion</span></span><span class="arrow" aria-hidden="true">→</span></a>
-    <a class="row" href="https://www.instagram.com/tristan.inmotion/" target="_blank" rel="noopener">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span>
+    <a class="row on" style="--i:4" href="https://www.instagram.com/tristan.inmotion/" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg></span>
       <span class="txt"><span class="name">Instagram</span><span class="sub">@tristan.inmotion</span></span><span class="arrow" aria-hidden="true">→</span></a>
-    <a class="row" href="https://www.tiktok.com/@tristan.inmotion" target="_blank" rel="noopener">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.5 2.5 2.5 4.5 5 4.8"/></svg></span>
+    <a class="row on" style="--i:5" href="https://www.tiktok.com/@tristan.inmotion" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></span>
       <span class="txt"><span class="name">TikTok</span><span class="sub">@tristan.inmotion</span></span><span class="arrow" aria-hidden="true">→</span></a>
-    <a class="row" href="https://www.facebook.com/share/1CPjZXfsof/" target="_blank" rel="noopener">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h-2a4 4 0 0 0-4 4v3H7v4h2v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h2z"/></svg></span>
+    <a class="row on" style="--i:6" href="https://www.facebook.com/share/1CPjZXfsof/" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span>
       <span class="txt"><span class="name">Facebook</span><span class="sub">tristan.inmotion</span></span><span class="arrow" aria-hidden="true">→</span></a>
   </section>
 
   <section aria-labelledby="h-train">
-    <h2 id="h-train">Training log</h2>
-    <a class="row" href="https://www.strava.com/athletes/136190678" target="_blank" rel="noopener">
-      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 18l4-8 4 8"/><path d="M11 18l3-6 3 6"/><path d="M2 21h20"/></svg></span>
+    <h2 class="on" style="--i:7" id="h-train">Training log</h2>
+    <a class="row on" style="--i:8" href="https://www.strava.com/athletes/136190678" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg></span>
       <span class="txt"><span class="name">Strava</span><span class="sub">Every run, including the slow ones</span></span><span class="arrow" aria-hidden="true">→</span></a>
   </section>
 
   <section aria-labelledby="h-use">
-    <h2 id="h-use">What I use</h2>
-    <p class="note">Affiliate links. I earn a small cut if you buy, and I only link what I actually use.</p>
-    <a class="row" href="https://1stphorm.com/TristanB" target="_blank" rel="noopener">
+    <h2 class="on" style="--i:9" id="h-use">What I use</h2>
+    <p class="note on" style="--i:10">Affiliate links. I earn a small cut if you buy, and I only link what I actually use.</p>
+    <a class="row on" style="--i:11" href="https://1stphorm.com/TristanB" target="_blank" rel="noopener">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M8 3h8l-1 4H9z"/><path d="M9 7h6v13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path d="M9 12h6"/></svg></span>
       <span class="txt"><span class="name">1st Phorm</span><span class="sub">1stphorm.com/TristanB</span></span><span class="arrow" aria-hidden="true">→</span></a>
-    <a class="row" href="https://rendezvu.co/tristan-blain" target="_blank" rel="noopener">
+    <a class="row on" style="--i:12" href="https://rendezvu.co/tristan-blain" target="_blank" rel="noopener">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span>
       <span class="txt"><span class="name">Shop my gear</span><span class="sub">The stuff I run in</span></span><span class="arrow" aria-hidden="true">→</span></a>
   </section>
 
-  <footer><i></i>tristan.inmotion</footer>
+  <footer class="on" style="--i:13"><i></i>tristan.inmotion</footer>
 </main>
 </body></html>
