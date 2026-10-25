@@ -131,7 +131,7 @@ function makeDog(imgs, parts, opt){
     function leg(u,l,at,ang,ch,dk){piece(ctx,l,ch.k,ang.lo,dk);piece(ctx,u,at,ang.up,dk)}
     leg('fu','fl',add(q.sho,FAR),q.ff,q.b,true);leg('hu','hl',add(q.hip,FAR),q.fh,q.d,true);
     piece(ctx,'torso',[0,0],q.pitch);
-    piece(ctx,'tail',[tl[0]-10,tl[1]+26],-55+9*Math.sin(T*4*p)+q.pitch,false,0.65);   // Frenchie stub curling off the rump, quick wag
+    piece(ctx,'tail',[tl[0]-28,tl[1]+4],-15+9*Math.sin(T*4*p)+q.pitch,false,0.9);   // Frenchie stub curling off the rump, quick wag
     leg('hu','hl',q.hip,q.nh,q.c,false);leg('fu','fl',q.sho,q.nf,q.a,false);
     piece(ctx,'head',[neck[0]-46,neck[1]+62],6-q.pitch*0.6+2*Math.sin(T*2*p+1));   // nose level, head set down into the shoulders
     ctx.restore()}
@@ -194,9 +194,9 @@ function makeDog(imgs, parts, opt){
     wake()}
   function setPaw(onn){if(paw){paw.setAttribute('aria-pressed',onn?'true':'false')}}
   function updateDog(dt,floorSpeed){if(!hd)return;var home=rw/2+30,px=hd.x;hd.t+=dt;
-    if(hd.mode==='in'){var k=Math.min(1,hd.t/1.8);hd.x=-60+(home+60)*ease(k);if(k>=1){hd.mode='run';hd.t=0}}
+    if(hd.mode==='in'){var k=Math.min(1,hd.t/3.6);hd.x=-60+(home+60)*(1-Math.pow(1-k,3));if(k>=1){hd.mode='run';hd.t=0}}
     else if(hd.mode==='run'){hd.x=home+4*Math.sin(hd.t*0.9);if(hd.t>STAY){hd.mode='out';hd.t=0;hd.x0=hd.x}}
-    else{var k=Math.min(1,hd.t/1.5);hd.x=hd.x0+(rw+80-hd.x0)*k*k;if(k>=1){hd=null;setPaw(false);return}}
+    else{var k=Math.min(1,hd.t/2.6);hd.x=hd.x0+(rw+80-hd.x0)*k*k;if(k>=1){hd=null;setPaw(false);return}}
     var vx=dt>0?(hd.x-px)/dt:0,stridePx=dog.stride*DSCALE;
     hd.p=(hd.p+dt*Math.max(0,floorSpeed+vx)/stridePx)%1;
     if(hd.hop>-1){hd.hop+=dt;if(hd.hop>0.5)hd.hop=-1}}
