@@ -184,7 +184,7 @@ function makeDog(imgs, parts, opt){
     if(prev<0.64&&t>=0.64)ripples.push({x:rw/2+4,t:0,big:true});
     if(t>=JUMP){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
   function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
-  function jump(){if(!pp||jt>=0)return;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
+  function jump(){if(!pp||(jt>=0&&jt<0.7)||st>=0)return;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
   // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
   var dog=null,hd=null,DSCALE=0.075,STAY=10;
   function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
@@ -204,18 +204,67 @@ function makeDog(imgs, parts, opt){
     if(hd.hop>0){var u=hd.hop/0.5;lift=170*4*u*(1-u);air=lift/170}
     ctx.fillStyle='rgba(0,0,0,'+(0.38*(1-0.5*air)).toFixed(3)+')';ctx.beginPath();ctx.ellipse(hd.x+20,gy,22*(1-0.4*air),3*(1-0.4*air),0,0,Math.PI*2);ctx.fill();
     dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
+  // ---- Trail mini-game: roots and rocks scroll in on the floor; tap to jump them. One clip ends the run.
+  var SPD=1, st=-1;                    // world speed multiplier (drops during a stumble), stumble timer
+  var G=null, best=0, playBtn=box.querySelector('.play'), hud=box.querySelector('.ghud'), hS=null, hB=null, hMsg=null;
+  try{best=+localStorage.getItem('tim_trail_best')||0}catch(e){}
+  if(hud){hS=hud.querySelector('.hs');hB=hud.querySelector('.hb');hMsg=hud.querySelector('.hm')}
+  function showHud(){if(!hud)return;hS.textContent=G?G.streak:0;hB.textContent=best}
+  function play(){if(!pp)return;
+    if(G&&!G.over){endGame(false);return}                     // Stop
+    G={obs:[],streak:0,gap:200,since:0,over:false};st=-1;SPD=1;
+    if(hd&&hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}   // Hooper sits this one out
+    if(paw)paw.hidden=true;if(hud){hud.hidden=false;hud.classList.remove('over');hMsg.textContent=''}
+    if(playBtn){playBtn.querySelector('span').textContent='Stop';playBtn.querySelector('path').setAttribute('d','M4 4 H12 V12 H4 Z');playBtn.setAttribute('aria-label','Stop the trail game')}
+    showHud();wake()}
+  function endGame(clipped){if(!G)return;G.over=true;
+    if(G.streak>best){best=G.streak;try{localStorage.setItem('tim_trail_best',String(best))}catch(e){}}
+    showHud();if(hud){hud.classList.add('over');hMsg.textContent=clipped?'Clipped it. Play to run again.':'Run ended.'}
+    if(playBtn){playBtn.querySelector('span').textContent='Play';playBtn.querySelector('path').setAttribute('d','M4 2.5 L13 8 L4 13.5 Z');playBtn.setAttribute('aria-label','Play the trail game')}
+    if(paw&&dog)paw.hidden=false}
+  function spawn(){var rock=Math.random()<0.5;
+    G.obs.push(rock?{k:'rock',x:rw+10,w:9+Math.random()*3,h:7+Math.random()*2,s:Math.random()}
+                   :{k:'root',x:rw+10,w:12+Math.random()*4,h:5+Math.random(),s:Math.random()});
+    var tight=Math.min(70,G.streak*5);G.gap=165-tight+Math.random()*(95-tight*0.4);G.since=0}
+  function updateGame(dt,fs){if(!G)return;var rx=rw/2-6,lift=pp.jump.lift*SCALE,move=fs*SPD*dt;
+    for(var i=G.obs.length-1;i>=0;i--){var o=G.obs[i];o.x-=move;
+      if(o.x+o.w<-20){G.obs.splice(i,1);continue}
+      if(G.over||o.hit||o.cleared)continue;
+      var a=rx,b=rx+8;                                         // where his planted foot meets the ground
+      if(o.x<b&&o.x+o.w>a&&lift<o.h-1){o.hit=true;st=0;endGame(true);continue}
+      if(o.x+o.w<a){o.cleared=true;G.streak++;showHud()}}
+    if(!G.over){G.since+=move;if(G.since>=G.gap)spawn()}
+    else if(!G.obs.length&&st<0)G=null}
+  function updateStumble(dt){var J=pp.jump;if(st<0){SPD+= (1-SPD)*Math.min(1,dt*4);return}
+    st+=dt;var k=Math.min(1,st/0.55);
+    J.w=Math.max(J.w,1-sm(0.6,0.85,st));J.crouch=Math.max(J.crouch,0.95*Math.sin(Math.PI*k));J.lift=0;J.tuck=0;
+    SPD=0.2+0.8*sm(0.25,0.9,st);if(st>0.9){st=-1}}
+  function drawObstacles(ctx,gy){if(!G)return;
+    G.obs.forEach(function(o){var x=o.x,w=o.w,h=o.h;
+      ctx.fillStyle='rgba(46,155,173,.45)';ctx.beginPath();ctx.ellipse(x+w/2,gy+0.5,w*0.75,2.2,0,0,Math.PI*2);ctx.fill();
+      if(o.k==='rock'){
+        ctx.fillStyle=o.hit?'#8A5A6E':'#5A6F92';ctx.beginPath();ctx.moveTo(x,gy);ctx.lineTo(x+w*0.12,gy-h*0.62);ctx.lineTo(x+w*(0.38+o.s*0.15),gy-h);
+        ctx.lineTo(x+w*0.82,gy-h*0.78);ctx.lineTo(x+w,gy);ctx.closePath();ctx.fill();
+        ctx.fillStyle=o.hit?'#B07A8C':'#8BA3C4';ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.62);ctx.lineTo(x+w*(0.38+o.s*0.15),gy-h);ctx.lineTo(x+w*0.82,gy-h*0.78);ctx.lineTo(x+w*0.55,gy-h*0.45);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='rgba(242,213,122,.95)';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.62);ctx.lineTo(x+w*(0.38+o.s*0.15),gy-h);ctx.lineTo(x+w*0.82,gy-h*0.78);ctx.stroke()}
+      else{
+        ctx.lineCap='round';ctx.strokeStyle=o.hit?'#A0687A':'#9A6A44';ctx.lineWidth=h*0.6;
+        ctx.beginPath();ctx.moveTo(x,gy+1);ctx.quadraticCurveTo(x+w*0.45,gy-h*1.45,x+w,gy+1);ctx.stroke();
+        ctx.strokeStyle=o.hit?'#A0687A':'#7E5534';ctx.lineWidth=h*0.32;ctx.beginPath();ctx.moveTo(x+w*0.55,gy-h*0.55);ctx.quadraticCurveTo(x+w*0.75,gy-h*0.2,x+w*0.82,gy+1);ctx.stroke();
+        ctx.strokeStyle='rgba(242,213,122,.95)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.5);ctx.quadraticCurveTo(x+w*0.4,gy-h*1.2,x+w*0.62,gy-h*0.7);ctx.stroke()}})}
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
     var air=pp.jump.lift/HEIGHT,sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
     rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
-    drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE);
+    drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD);
+    drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
     bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);drawDog(bctx,gy+1);
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
     edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){var prev=ph,jumping=jt>=0;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;updateJump(dt);updateDog(dt,pp.groundSpeed*SCALE/CYCLE);
+    if(pp){var prev=ph,jumping=jt>=0||st>=0,fs=pp.groundSpeed*SCALE/CYCLE;ph=(ph+dt*SPD/CYCLE)%1;off+=fs*SPD*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
     drawGrid();drawRunner(dt);
@@ -224,13 +273,14 @@ function makeDog(imgs, parts, opt){
   var btn=box.querySelector('.jump'),paw=box.querySelector('.paw');
   if(paw)paw.addEventListener('click',function(e){e.stopPropagation();hooper()});
   if(btn)btn.addEventListener('click',function(e){e.stopPropagation();jump()});
+  if(playBtn)playBtn.addEventListener('click',function(e){e.stopPropagation();play()});
   box.addEventListener('click',function(e){if(!e.target.closest('a'))jump()});
   
-  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;loadDog();if(still){on=false;return}
+  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','hu','hl'],di={},dl=dn.length;
-    dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw)paw.hidden=false}};
+    dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
       i.src='scene/hooper/'+n+'.webp?v=2';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});

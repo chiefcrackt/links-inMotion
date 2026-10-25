@@ -113,6 +113,12 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 .scene .ctrls button[hidden]{display:none}
 .scene .ctrls svg{width:14px;height:14px}
 .scene .paw[aria-pressed=true]{border-color:var(--gold);background:rgba(232,201,106,.14)}
+.scene .ghud{z-index:4;left:14px;top:12px;max-width:52%;font-family:var(--display);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem;color:var(--muted);line-height:1.35}
+.scene .ghud[hidden]{display:none}
+.scene .ghud span{color:var(--gold);font-size:1rem;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.scene .ghud b{font-weight:700}
+.scene .ghud .hm{color:var(--paper);letter-spacing:.08em;text-transform:none;font-family:var(--body);font-weight:500;font-size:.78rem;margin-top:2px}
+.scene .ghud.over span{color:var(--paper)}
 .scene .ctrls button:hover,.scene .ctrls button:focus-visible{border-color:var(--gold);background:rgba(14,26,46,.92);outline:none}
 .scene .ctrls button:active{transform:translateY(1px)}
 .scene::before,.scene::after{content:"";position:absolute;z-index:3;width:18px;height:18px;border:0 solid #2E9BAD}
@@ -172,7 +178,9 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
     <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
     <div class="floor"><canvas class="grid"></canvas></div><div class="horizon"></div>
     <canvas class="runcv" role="img" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun"></canvas>
+    <div class="ghud" hidden aria-live="polite"><div><b>Streak</b> <span class="hs">0</span></div><div><b>Best</b> <span class="hb">0</span></div><div class="hm"></div></div>
     <div class="ctrls">
+    <button class="play" type="button" hidden aria-label="Play the trail game"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5 L13 8 L4 13.5 Z" fill="currentColor"/></svg><span>Play</span></button>
     <button class="paw" type="button" hidden aria-pressed="false" aria-label="Bring Hooper along"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="10.6" rx="3.4" ry="2.9" fill="currentColor"/><ellipse cx="3.6" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/><ellipse cx="6.4" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="9.6" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="12.4" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/></svg>Hooper</button>
     <button class="jump" type="button" hidden aria-label="Make him jump"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 L13 9 H10 V13 H6 V9 H3 Z" fill="currentColor"/></svg>Jump</button>
     </div>
@@ -249,5 +257,5 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   });
 })();
 </script>
-<script src="scene/runner.js?v=11"></script>
+<script src="scene/runner.js?v=12"></script>
 </body></html>
