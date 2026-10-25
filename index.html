@@ -105,14 +105,16 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 .scene .floor::after{content:"";position:absolute;inset:0;background:linear-gradient(#0E1A2E 0%,transparent 45%)}
 .scene .runcv{inset:0;width:100%;height:100%;display:block}
 .scene{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.scene .jump{pointer-events:auto;z-index:4;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;
-  padding:7px 12px 7px 10px;background:rgba(14,26,46,.72);color:var(--gold);border:1px solid rgba(46,155,173,.6);
-  font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
+.scene .ctrls{z-index:4;right:10px;top:10px;display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.scene .ctrls button{position:static;pointer-events:auto;display:flex;align-items:center;gap:6px;
+  padding:5px 9px 5px 8px;min-height:30px;background:rgba(14,26,46,.72);color:var(--gold);border:1px solid rgba(46,155,173,.6);
+  font-family:var(--display);font-weight:700;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
   transition:border-color .15s,background .15s}
-.scene .jump[hidden]{display:none}
-.scene .jump svg{width:14px;height:14px}
-.scene .jump:hover,.scene .jump:focus-visible{border-color:var(--gold);background:rgba(14,26,46,.92);outline:none}
-.scene .jump:active{transform:translateY(1px)}
+.scene .ctrls button[hidden]{display:none}
+.scene .ctrls svg{width:14px;height:14px}
+.scene .paw[aria-pressed=true]{border-color:var(--gold);background:rgba(232,201,106,.14)}
+.scene .ctrls button:hover,.scene .ctrls button:focus-visible{border-color:var(--gold);background:rgba(14,26,46,.92);outline:none}
+.scene .ctrls button:active{transform:translateY(1px)}
 .scene::before,.scene::after{content:"";position:absolute;z-index:3;width:18px;height:18px;border:0 solid #2E9BAD}
 .scene::before{left:-1px;top:-1px;border-top-width:3px;border-left-width:3px}
 .scene::after{right:-1px;bottom:-1px;border-bottom-width:3px;border-right-width:3px}
@@ -152,7 +154,10 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
     <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
     <div class="floor"><canvas class="grid"></canvas></div><div class="horizon"></div>
     <canvas class="runcv" role="img" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun"></canvas>
+    <div class="ctrls">
+    <button class="paw" type="button" hidden aria-pressed="false" aria-label="Bring Hooper along"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="10.6" rx="3.4" ry="2.9" fill="currentColor"/><ellipse cx="3.6" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/><ellipse cx="6.4" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="9.6" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="12.4" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/></svg>Hooper</button>
     <button class="jump" type="button" hidden aria-label="Make him jump"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 L13 9 H10 V13 H6 V9 H3 Z" fill="currentColor"/></svg>Jump</button>
+    </div>
   </div>
 
 
@@ -192,5 +197,5 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
 
   <footer class="on" style="--i:13"><i></i>tristan.inmotion</footer>
 </main>
-<script src="scene/runner.js?v=4"></script>
+<script src="scene/runner.js?v=5"></script>
 </body></html>

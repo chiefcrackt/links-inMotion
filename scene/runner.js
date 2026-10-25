@@ -84,6 +84,51 @@ function makePuppet(imgs, parts, opt){
   return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
 }
 
+/* Hooper's joints, in the source parts sheet's pixels. */
+var DOGPARTS={"torso":{"pivot":[113,195],"hip":[113,195],"sho":[410,202],"neck":[470,65],"tail":[20,95]},"head":{"pivot":[92,234]},"tail":{"pivot":[135,27]},"hind":{"pivot":[68,67],"paw":[96,337]},"front":{"pivot":[49,32],"paw":[44,302]}};
+/* Hooper: a trotting cutout dog. Legs are single pieces that swing from the hip/shoulder in a trot
+   (diagonal pairs move together). The body height is solved so the lowest paw touches the ground.
+   Units are source pixels of the parts sheet; draw() scales to the screen. */
+function makeDog(imgs, parts, opt){
+  opt=opt||{};
+  var R=Math.PI/180,T=Math.PI*2,K=opt.imgScale||1;
+  function sub(a,b){return [a[0]-b[0],a[1]-b[1]]}
+  function rot(v,a){var c=Math.cos(a*R),s=Math.sin(a*R);return [v[0]*c-v[1]*s,v[0]*s+v[1]*c]}
+  var P=parts,tor=P.torso;
+  function rel(n){return sub(tor[n],tor.pivot)}            // attach point relative to the body origin (the hip)
+  var HIP=rel('hip'),SHO=rel('sho'),NECK=rel('neck'),TAILP=rel('tail');
+  var HV=sub(P.hind.paw,P.hind.pivot),FV=sub(P.front.paw,P.front.pivot);  // pivot -> paw, resting
+  var SWING=24, FAR=[22,-8];
+  var dark={};
+  function shade(n){if(dark[n])return dark[n];var s=imgs[n],c=document.createElement('canvas');c.width=s.naturalWidth||s.width;c.height=s.naturalHeight||s.height;
+    var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.34)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
+  function piece(ctx,n,at,ang,dk){var i=P[n];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(ang*R);ctx.scale(1/K,1/K);
+    ctx.drawImage(dk?shade(n):imgs[n],-i.pivot[0]*K,-i.pivot[1]*K);ctx.restore()}
+  // one leg: swing angle (+ = paw forward) and lift while it swings forward
+  function legAt(p){p=((p%1)+1)%1;var a=SWING*Math.cos(T*p);           // p 0..0.5 stance (paw moves back), 0.5..1 swing
+    var lift=p>0.5?28*Math.sin(Math.PI*(p-0.5)/0.5):0, tuck=p>0.5?14*Math.sin(Math.PI*(p-0.5)/0.5):0;
+    return {a:-a-tuck*0.3,lift:lift,tuck:tuck}}
+  function pawY(base,v,l){var r=rot(v,l.a);return base[1]+r[1]-l.lift}
+  function pose(p){
+    var nf=legAt(p),fh=legAt(p),nh=legAt(p+0.5),ff=legAt(p+0.5);   // trot: near-front with far-hind
+    var pitch=1.6*Math.sin(T*2*p);
+    var low=Math.max(pawY(rot(SHO,pitch),FV,nf),pawY(rot(HIP,pitch),HV,nh),pawY(rot(SHO,pitch),FV,ff),pawY(rot(HIP,pitch),HV,fh));
+    return {nf:nf,fh:fh,nh:nh,ff:ff,pitch:pitch,y:-low}}
+  var stride=(function(){var L=Math.hypot(FV[0],FV[1]);return 2*L*Math.sin(SWING*R)*2})(); // ground covered per cycle (two stances)
+  function draw(ctx,p,x,gy,scale,lift){
+    var q=pose(p);ctx.save();ctx.translate(x,gy);ctx.scale(scale,scale);ctx.translate(0,q.y-(lift||0));
+    var hip=rot(HIP,q.pitch),sho=rot(SHO,q.pitch),neck=rot(NECK,q.pitch),tl=rot(TAILP,q.pitch);
+    function leg(n,at,l,dk,far){var o=far?[at[0]+FAR[0],at[1]+FAR[1]-l.lift]:[at[0],at[1]-l.lift];piece(ctx,n,o,l.a,dk)}
+    piece(ctx,'tail',tl,-18*Math.sin(T*3*p)+q.pitch,true);
+    leg('front',sho,q.ff,true,true);leg('hind',hip,q.fh,true,true);
+    piece(ctx,'torso',[0,0],q.pitch);
+    leg('hind',hip,q.nh,false,false);leg('front',sho,q.nf,false,false);
+    piece(ctx,'head',neck,-q.pitch*0.6+2.5*Math.sin(T*2*p+1));
+    ctx.restore()}
+  return {draw:draw,stride:stride}
+}
+
+
 /* Run scene for the links page: draws the cutout runner and the grid floor each frame, with the floor
    moving at exactly the speed the planted foot pushes back. Pauses when the scene is off screen. */
 (function(){
@@ -129,31 +174,55 @@ function makePuppet(imgs, parts, opt){
     else{var v=(t-0.64)/(JUMP-0.64);J.lift=0;J.tuck=0;J.crouch=0.85*Math.sin(Math.PI*Math.min(1,v))}
     if(prev<0.64&&t>=0.64)ripples.push({x:rw/2+4,t:0,big:true});
     if(t>=JUMP){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
-  function jump(){if(!pp||jt>=0)return;jt=0;if(!on||still){on=true;last=0;requestAnimationFrame(frame)}}
+  function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
+  function jump(){if(!pp||jt>=0)return;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
+  // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
+  var dog=null,hd=null,DSCALE=0.075,STAY=10;
+  function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
+  function hooper(){if(!dog)return;
+    if(!hd){hd={mode:'in',t:0,p:0,x:-60,hop:-1};setPaw(true)}
+    else if(hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}
+    wake()}
+  function setPaw(onn){if(paw){paw.setAttribute('aria-pressed',onn?'true':'false')}}
+  function updateDog(dt,floorSpeed){if(!hd)return;var home=rw/2+30,px=hd.x;hd.t+=dt;
+    if(hd.mode==='in'){var k=Math.min(1,hd.t/1.8);hd.x=-60+(home+60)*ease(k);if(k>=1){hd.mode='run';hd.t=0}}
+    else if(hd.mode==='run'){hd.x=home+4*Math.sin(hd.t*0.9);if(hd.t>STAY){hd.mode='out';hd.t=0;hd.x0=hd.x}}
+    else{var k=Math.min(1,hd.t/1.5);hd.x=hd.x0+(rw+80-hd.x0)*k*k;if(k>=1){hd=null;setPaw(false);return}}
+    var vx=dt>0?(hd.x-px)/dt:0,stridePx=dog.stride*DSCALE;
+    hd.p=(hd.p+dt*Math.max(0,floorSpeed+vx)/stridePx)%1;
+    if(hd.hop>-1){hd.hop+=dt;if(hd.hop>0.5)hd.hop=-1}}
+  function drawDog(ctx,gy){if(!hd)return;var lift=0,air=0;
+    if(hd.hop>0){var u=hd.hop/0.5;lift=170*4*u*(1-u);air=lift/170}
+    ctx.fillStyle='rgba(0,0,0,'+(0.38*(1-0.5*air)).toFixed(3)+')';ctx.beginPath();ctx.ellipse(hd.x+20,gy,22*(1-0.4*air),3*(1-0.4*air),0,0,Math.PI*2);ctx.fill();
+    dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
     var air=pp.jump.lift/HEIGHT,sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
     rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
-    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);
+    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);drawDog(bctx,gy+1);
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
     edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){var prev=ph,jumping=jt>=0;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;updateJump(dt);
+    if(pp){var prev=ph,jumping=jt>=0;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;updateJump(dt);updateDog(dt,pp.groundSpeed*SCALE/CYCLE);
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
     drawGrid();drawRunner(dt);
-    if(still&&jt<0&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
+    if(still&&jt<0&&!hd&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
     requestAnimationFrame(frame)}
-  var btn=box.querySelector('.jump');
+  var btn=box.querySelector('.jump'),paw=box.querySelector('.paw');
+  if(paw)paw.addEventListener('click',function(e){e.stopPropagation();hooper()});
   if(btn)btn.addEventListener('click',function(e){e.stopPropagation();jump()});
   box.addEventListener('click',function(e){if(!e.target.closest('a'))jump()});
-  document.addEventListener('keydown',function(e){if((e.key===' '||e.key==='ArrowUp')&&document.activeElement===btn){e.preventDefault();jump()}});
-  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(still){on=false;return}
+  
+  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;loadDog();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
+  function loadDog(){var dn=['torso','head','tail','hind','front'],di={},dl=dn.length;
+    dn.forEach(function(n){var i=new Image();i.onload=function(){if(--dl===0){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw)paw.hidden=false}};
+      i.src='scene/hooper/'+n+'.webp?v=1';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
