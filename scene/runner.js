@@ -173,18 +173,18 @@ function makeDog(imgs, parts, opt){
       rctx.strokeStyle='rgba(232,201,106,'+(0.45*(1-k)).toFixed(3)+')';rctx.lineWidth=1;
       rctx.beginPath();rctx.ellipse(r.x,gy,(3+16*e)*z,(1+2.5*e)*z,0,0,Math.PI*2);rctx.stroke()}}
   // Jump timeline (seconds): crouch, spring up with knees tucked, land with a squash. jt < 0 means not jumping.
-  var jt=-1,JUMP=0.95,HEIGHT=330;
+  var jt=-1,HEIGHT=330,jH=330,jA1=0.64,jA2=0.95;   // jump height (source px), touchdown time, end time
   function sm(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x)}
   function updateJump(dt,gy){var J=pp.jump;if(jt<0){J.tuck=J.crouch=J.lift=J.w=0;return}
     var prev=jt;jt+=dt;var t=jt;
-    J.w=sm(0,0.07,t)*(1-sm(0.82,0.95,t));
+    J.w=sm(0,0.07,t)*(1-sm(jA2-0.13,jA2,t));
     if(t<0.16){J.crouch=Math.sin(Math.PI/2*t/0.16);J.tuck=0;J.lift=0}
-    else if(t<0.64){var u=(t-0.16)/0.48;J.lift=HEIGHT*4*u*(1-u);J.tuck=Math.pow(Math.sin(Math.PI*u),0.6);J.crouch=Math.max(0,1-u*7)}
-    else{var v=(t-0.64)/(JUMP-0.64);J.lift=0;J.tuck=0;J.crouch=0.85*Math.sin(Math.PI*Math.min(1,v))}
-    if(prev<0.64&&t>=0.64)ripples.push({x:rw/2+4,t:0,big:true});
-    if(t>=JUMP){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
+    else if(t<jA1){var u=(t-0.16)/(jA1-0.16);J.lift=jH*4*u*(1-u);J.tuck=Math.pow(Math.sin(Math.PI*u),0.6);J.crouch=Math.max(0,1-u*7)}
+    else{var v=(t-jA1)/(jA2-jA1);J.lift=0;J.tuck=0;J.crouch=0.85*Math.sin(Math.PI*Math.min(1,v))}
+    if(prev<jA1&&t>=jA1)ripples.push({x:rw/2+4,t:0,big:true});
+    if(t>=jA2){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
   function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
-  function jump(){if(!pp||(jt>=0&&jt<0.7)||st>=0)return;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
+  function jump(){if(!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
   // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
   var dog=null,hd=null,DSCALE=0.075,STAY=10;
   function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
@@ -223,9 +223,9 @@ function makeDog(imgs, parts, opt){
     if(playBtn){playBtn.querySelector('span').textContent='Play';playBtn.querySelector('path').setAttribute('d','M4 2.5 L13 8 L4 13.5 Z');playBtn.setAttribute('aria-label','Play the trail game')}
     if(paw&&dog)paw.hidden=false}
   function spawn(){var rock=Math.random()<0.5;
-    G.obs.push(rock?{k:'rock',x:rw+10,w:9+Math.random()*3,h:7+Math.random()*2,s:Math.random()}
-                   :{k:'root',x:rw+10,w:12+Math.random()*4,h:5+Math.random(),s:Math.random()});
-    var tight=Math.min(70,G.streak*5);G.gap=165-tight+Math.random()*(95-tight*0.4);G.since=0}
+    G.obs.push(rock?{k:'rock',x:rw+10,w:15+Math.random()*4,h:13+Math.random()*4,s:Math.random()}
+                   :{k:'root',x:rw+10,w:22+Math.random()*5,h:9+Math.random()*2,s:Math.random()});
+    var tight=Math.min(80,G.streak*5);G.gap=200-tight+Math.random()*(110-tight*0.4);G.since=0}
   function updateGame(dt,fs){if(!G)return;var rx=rw/2-6,lift=pp.jump.lift*SCALE,move=fs*SPD*dt;
     for(var i=G.obs.length-1;i>=0;i--){var o=G.obs[i];o.x-=move;
       if(o.x+o.w<-20){G.obs.splice(i,1);continue}
@@ -235,10 +235,17 @@ function makeDog(imgs, parts, opt){
       if(o.x+o.w<a){o.cleared=true;G.streak++;showHud()}}
     if(!G.over){G.since+=move;if(G.since>=G.gap)spawn()}
     else if(!G.obs.length&&st<0)G=null}
-  function updateStumble(dt){var J=pp.jump;if(st<0){SPD+= (1-SPD)*Math.min(1,dt*4);return}
-    st+=dt;var k=Math.min(1,st/0.55);
-    J.w=Math.max(J.w,1-sm(0.6,0.85,st));J.crouch=Math.max(J.crouch,0.95*Math.sin(Math.PI*k));J.lift=0;J.tuck=0;
-    SPD=0.2+0.8*sm(0.25,0.9,st);if(st>0.9){st=-1}}
+  var FALL=0;   // forward tilt in degrees, pivoting on his front foot
+  function updateStumble(dt){var J=pp.jump;if(st<0){FALL=0;SPD+=(1-SPD)*Math.min(1,dt*4);return}
+    st+=dt;var t=st;
+    if(t<0.5){var k=t/0.5;FALL=84*k*k}                                   // trip and topple (speeds up like gravity)
+    else if(t<0.66){var b=(t-0.5)/0.16;FALL=84-7*Math.sin(Math.PI*b)}    // small bounce off the grid
+    else if(t<1.7){FALL=84}                                              // lie there a beat
+    else if(t<2.35){var g=sm(1.7,2.35,t);FALL=84*(1-g)}                  // push back up
+    else{FALL=0;st=-1}
+    var down=st<0?0:Math.min(1,FALL/84);
+    J.w=st<0?0:1;J.crouch=0.35*down+0.6*(t>1.7&&t<2.35?Math.sin(Math.PI*(t-1.7)/0.65):0);J.tuck=0.25*down;J.lift=0;
+    SPD=st<0?SPD:Math.max(0,1-sm(0,0.45,t))+sm(1.85,2.35,t)}
   function drawObstacles(ctx,gy){if(!G)return;
     G.obs.forEach(function(o){var x=o.x,w=o.w,h=o.h;
       ctx.fillStyle='rgba(46,155,173,.45)';ctx.beginPath();ctx.ellipse(x+w/2,gy+0.5,w*0.75,2.2,0,0,Math.PI*2);ctx.fill();
@@ -254,12 +261,12 @@ function makeDog(imgs, parts, opt){
         ctx.strokeStyle='rgba(242,213,122,.95)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.5);ctx.quadraticCurveTo(x+w*0.4,gy-h*1.2,x+w*0.62,gy-h*0.7);ctx.stroke()}})}
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
-    var air=pp.jump.lift/HEIGHT,sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
+    var air=Math.min(1,pp.jump.lift/HEIGHT),sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
     rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD);
     drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
-    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);drawDog(bctx,gy+1);
+    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();drawDog(bctx,gy+1);
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
     edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
