@@ -25,7 +25,7 @@ function makePuppet(imgs, parts, opt){
   var sole=parts.shoe.sole.map(function(q){return [q[0]*SHOE_SCALE,q[1]*SHOE_SCALE]});
   // Jump state, set by the scene: tuck (0..1 knees up in the air), crouch (0..1 bent knees on the ground),
   // lift (source px above the ground), w (0..1 how much the jump overrides the stride's own hip height).
-  var J={tuck:0,crouch:0,lift:0,w:0};
+  var J={tuck:0,crouch:0,lift:0,w:0,pump:0};
   function mixv(a,b,t){return a+(b-a)*t}
   function leg(p,h){var hip=cr(HIP,p),kn=cr(KNEE,p),pf=cr(PF,p);
     if(J.tuck>0){var T=Math.PI*2;hip=mixv(hip,40+10*Math.cos(T*p),J.tuck);kn=mixv(kn,108,J.tuck);pf=mixv(pf,32,J.tuck)}
@@ -48,6 +48,7 @@ function makePuppet(imgs, parts, opt){
   function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),el=cr(ELB,p);
     if(J.tuck>0){sw=mixv(sw,shade?-20:58,J.tuck);el=mixv(el,shade?70:104,J.tuck)}   // drive the near arm up, far arm back
     if(J.crouch>0){sw=mixv(sw,-30,J.crouch*0.7)}                                        // arms swing back to load
+    if(J.pump>0&&!shade){sw=mixv(sw,148,J.pump);el=mixv(el,30,J.pump)}                   // milestone fist pump
     var fo=sw+el,e=pt(sh,UA.len,sw);
     piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade)}
   // Core motion. q = step phase (two steps per cycle). Landing is near q=0.25 (the "down" pose).
@@ -184,7 +185,7 @@ function makeDog(imgs, parts, opt){
     if(prev<jA1&&t>=jA1)ripples.push({x:rw/2+4,t:0,big:true});
     if(t>=jA2){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
   function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
-  function jump(){if(!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
+  function jump(){if(G&&!G.over)hideHint();if(!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
   // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
   var dog=null,hd=null,DSCALE=0.075,STAY=10;
   function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
@@ -206,18 +207,26 @@ function makeDog(imgs, parts, opt){
     dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
   // ---- Trail mini-game: roots and rocks scroll in on the floor; tap to jump them. One clip ends the run.
   var SPD=1, st=-1;                    // world speed multiplier (drops during a stumble), stumble timer
+  var GS=1, gsGoal=1, mile=0, signs=[], burst=-1, pumpT=-1;   // game speed (builds every 5 clears), mile markers, celebration timers
+  var hint=box.querySelector('.ghint'), hintT=-1;
+  var hills=[].slice.call(box.querySelectorAll('.far,.near,.glint'));
+  function hillRate(r){hills.forEach(function(el){if(el.getAnimations)el.getAnimations().forEach(function(a){a.playbackRate=r})})}
+  function isMile(n){return n===10||n===25||(n>=50&&n%25===0)}
+  function celebrate(){mile++;signs.push({x:rw+30,n:mile});burst=0;pumpT=0;
+    if(hud){hud.classList.remove('pop');void hud.offsetWidth;hud.classList.add('pop')}}
   var G=null, best=0, playBtn=box.querySelector('.play'), hud=box.querySelector('.ghud'), hS=null, hB=null, hMsg=null;
   try{best=+localStorage.getItem('tim_trail_best')||0}catch(e){}
   if(hud){hS=hud.querySelector('.hs');hB=hud.querySelector('.hb');hMsg=hud.querySelector('.hm')}
   function showHud(){if(!hud)return;hS.textContent=G?G.streak:0;hB.textContent=best}
   function play(){if(!pp)return;
     if(G&&!G.over){endGame(false);return}                     // Stop
-    G={obs:[],streak:0,gap:200,since:0,over:false};st=-1;SPD=1;
+    G={obs:[],streak:0,gap:260,since:0,over:false};st=-1;SPD=1;gsGoal=1;mile=0;signs=[];
+    if(hint){hint.hidden=false;hint.classList.remove('gone');hintT=0}
     if(hd&&hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}   // Hooper sits this one out
     if(paw)paw.hidden=true;if(hud){hud.hidden=false;hud.classList.remove('over');hMsg.textContent=''}
     if(playBtn){playBtn.querySelector('span').textContent='Stop';playBtn.querySelector('path').setAttribute('d','M4 4 H12 V12 H4 Z');playBtn.setAttribute('aria-label','Stop the trail game')}
     showHud();wake()}
-  function endGame(clipped){if(!G)return;G.over=true;
+  function endGame(clipped){if(!G)return;G.over=true;gsGoal=1;hideHint();
     if(G.streak>best){best=G.streak;try{localStorage.setItem('tim_trail_best',String(best))}catch(e){}}
     showHud();if(hud){hud.classList.add('over');hMsg.textContent=clipped?'Clipped it. Play to run again.':'Run ended.'}
     if(playBtn){playBtn.querySelector('span').textContent='Play';playBtn.querySelector('path').setAttribute('d','M4 2.5 L13 8 L4 13.5 Z');playBtn.setAttribute('aria-label','Play the trail game')}
@@ -225,16 +234,35 @@ function makeDog(imgs, parts, opt){
   function spawn(){var rock=Math.random()<0.5;
     G.obs.push(rock?{k:'rock',x:rw+10,w:15+Math.random()*4,h:13+Math.random()*4,s:Math.random()}
                    :{k:'root',x:rw+10,w:22+Math.random()*5,h:9+Math.random()*2,s:Math.random()});
-    var tight=Math.min(80,G.streak*5);G.gap=200-tight+Math.random()*(110-tight*0.4);G.since=0}
-  function updateGame(dt,fs){if(!G)return;var rx=rw/2-6,lift=pp.jump.lift*SCALE,move=fs*SPD*dt;
+    var tight=Math.min(80,G.streak*5);G.gap=(200-tight+Math.random()*(110-tight*0.4))*gsGoal;G.since=0}   // gaps stretch with speed so they stay fair
+  function updateGame(dt,fs){if(!G)return;var rx=rw/2-6,lift=pp.jump.lift*SCALE,move=fs*SPD*GS*dt;
     for(var i=G.obs.length-1;i>=0;i--){var o=G.obs[i];o.x-=move;
       if(o.x+o.w<-20){G.obs.splice(i,1);continue}
       if(G.over||o.hit||o.cleared)continue;
       var a=rx,b=rx+8;                                         // where his planted foot meets the ground
       if(o.x<b&&o.x+o.w>a&&lift<o.h-1){o.hit=true;st=0;endGame(true);continue}
-      if(o.x+o.w<a){o.cleared=true;G.streak++;showHud()}}
+      if(o.x+o.w<a){o.cleared=true;G.streak++;showHud();
+        if(G.streak%5===0)gsGoal=Math.min(1.6,1+0.08*G.streak/5);
+        if(isMile(G.streak))celebrate()}}
     if(!G.over){G.since+=move;if(G.since>=G.gap)spawn()}
     else if(!G.obs.length&&st<0)G=null}
+  function hideHint(){if(hint&&!hint.hidden){hint.classList.add('gone');hintT=-1;setTimeout(function(){if(hint.classList.contains('gone'))hint.hidden=true},400)}}
+  function updateExtras(dt,fs){
+    var g0=GS;GS+=(gsGoal-GS)*Math.min(1,dt*1.2);if(Math.abs(GS-g0)>0.002||(GS!==1&&!G))hillRate(GS);
+    if(hintT>=0){hintT+=dt;if(hintT>4)hideHint()}
+    if(pumpT>=0){pumpT+=dt;pp.jump.pump=st>=0?0:Math.sin(Math.PI*Math.min(1,pumpT/1.1));if(pumpT>1.1){pumpT=-1;pp.jump.pump=0}}
+    if(burst>=0){burst+=dt;if(burst>0.7)burst=-1}
+    for(var i=signs.length-1;i>=0;i--){signs[i].x-=fs*SPD*GS*dt;if(signs[i].x<-60)signs.splice(i,1)}}
+  function drawSigns(ctx,gy){signs.forEach(function(sg){var x=sg.x,top=gy-46;
+    ctx.fillStyle='#C9A24A';ctx.fillRect(x+21,top+14,3,32);                      // post
+    ctx.fillStyle='#13233D';ctx.strokeStyle='#E8C96A';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.rect(x,top,46,16);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#E8C96A';ctx.font='700 10px "Barlow Condensed","Arial Narrow",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('MILE '+sg.n,x+23,top+8.5);ctx.textAlign='start';ctx.textBaseline='alphabetic'})}
+  function drawBurst(ctx,gy){if(burst<0)return;var k=burst/0.7,cx=rw/2,cy=gy-72,r=12+70*(1-Math.pow(1-k,2));
+    ctx.strokeStyle='rgba(242,213,122,'+(0.85*(1-k)).toFixed(3)+')';ctx.lineWidth=3*(1-k)+1;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(46,155,173,'+(0.6*(1-k)).toFixed(3)+')';ctx.lineWidth=1.5;
+    for(var i=0;i<10;i++){var a=i/10*Math.PI*2+0.3,r1=r*0.75,r2=r*1.05;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);ctx.stroke()}}
   var FALL=0;   // forward tilt in degrees, pivoting on his front foot
   function updateStumble(dt){var J=pp.jump;if(st<0){FALL=0;SPD+=(1-SPD)*Math.min(1,dt*4);return}
     st+=dt;var t=st;
@@ -263,15 +291,17 @@ function makeDog(imgs, parts, opt){
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
     var air=Math.min(1,pp.jump.lift/HEIGHT),sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
     rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
-    drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD);
+    drawSigns(rctx,gy);
+    drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD*GS);
     drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
     bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();drawDog(bctx,gy+1);
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
-    edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
+    edge(-0.6,-1.1,'#2E9BAD',0.55);  // grid glow from below: teal along the underside
+    drawBurst(rctx,gy)}
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){var prev=ph,jumping=jt>=0||st>=0,fs=pp.groundSpeed*SCALE/CYCLE;ph=(ph+dt*SPD/CYCLE)%1;off+=fs*SPD*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);
+    if(pp){var prev=ph,jumping=jt>=0||st>=0,fs=pp.groundSpeed*SCALE/CYCLE;ph=(ph+dt*SPD*GS/CYCLE)%1;off+=fs*SPD*GS*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);updateExtras(dt,fs);
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
     drawGrid();drawRunner(dt);

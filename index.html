@@ -119,6 +119,16 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 .scene .ghud b{font-weight:700}
 .scene .ghud .hm{color:var(--paper);letter-spacing:.08em;text-transform:none;font-family:var(--body);font-weight:500;font-size:.78rem;margin-top:2px}
 .scene .ghud.over span{color:var(--paper)}
+.scene .ghud.pop span.hs{display:inline-block;animation:pop .6s ease-out}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.6);color:#fff}100%{transform:scale(1)}}
+.scene .ghint{z-index:4;left:50%;top:30%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;white-space:nowrap;
+  padding:7px 12px;background:rgba(14,26,46,.78);border:1px solid rgba(232,201,106,.55);color:var(--gold);
+  font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;
+  animation:hintpulse 1.4s ease-in-out infinite;transition:opacity .35s}
+.scene .ghint[hidden]{display:none}
+.scene .ghint.gone{opacity:0}
+.scene .ghint svg{width:15px;height:15px}
+@keyframes hintpulse{0%,100%{box-shadow:0 0 0 0 rgba(232,201,106,0)}50%{box-shadow:0 0 0 4px rgba(232,201,106,.12)}}
 .scene .ctrls button:hover,.scene .ctrls button:focus-visible{border-color:var(--gold);background:rgba(14,26,46,.92);outline:none}
 .scene .ctrls button:active{transform:translateY(1px)}
 .scene::before,.scene::after{content:"";position:absolute;z-index:3;width:18px;height:18px;border:0 solid #2E9BAD}
@@ -178,6 +188,7 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
     <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
     <div class="floor"><canvas class="grid"></canvas></div><div class="horizon"></div>
     <canvas class="runcv" role="img" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun"></canvas>
+    <div class="ghint" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.6" fill="currentColor"/><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg>Tap anywhere to jump</div>
     <div class="ghud" hidden aria-live="polite"><div><b>Streak</b> <span class="hs">0</span></div><div><b>Best</b> <span class="hb">0</span></div><div class="hm"></div></div>
     <div class="ctrls">
     <button class="play" type="button" hidden aria-label="Play the trail game"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5 L13 8 L4 13.5 Z" fill="currentColor"/></svg><span>Play</span></button>
@@ -257,5 +268,5 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   });
 })();
 </script>
-<script src="scene/runner.js?v=13"></script>
+<script src="scene/runner.js?v=14"></script>
 </body></html>
