@@ -75,7 +75,7 @@ function makePuppet(imgs, parts, opt){
   var grid=box.querySelector('.grid'),run=box.querySelector('.runcv');if(!grid||!run)return;
   var gctx=grid.getContext('2d'),rctx=run.getContext('2d');
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var CYCLE=0.8, SCALE=0.105, dpr=1, gw=0, gh=0, rw=0, rh=0, off=0, ph=0.1, last=0, on=true, pp=null;
+  var CYCLE=1.05, SCALE=0.105, dpr=1, gw=0, gh=0, rw=0, rh=0, off=0, ph=0.1, last=0, on=true, pp=null;
   var names=['head','torso','shorts','thigh','shin','shoe','upperarm','forearm','forearm_far'],imgs={},left=names.length;
   function size(){dpr=Math.min(window.devicePixelRatio||1,2);
     var g=grid.getBoundingClientRect(),r=run.getBoundingClientRect();gw=g.width;gh=g.height;rw=r.width;rh=r.height;
@@ -86,12 +86,36 @@ function makePuppet(imgs, parts, opt){
     for(var k=-16;k<=16;k++){var xb=cx+k*sp-o;gctx.beginPath();gctx.moveTo(cx,0);gctx.lineTo(cx+(xb-cx)*1.6,gh*1.6);gctx.stroke()}
     for(var n=0;n<40;n++){var y=gh/(n+.55);if(y>gh+1)continue;if(y<1.5)break;
       gctx.strokeStyle='rgba(46,155,173,'+Math.min(.85,.15+y/gh*.8).toFixed(3)+')';gctx.beginPath();gctx.moveTo(0,y);gctx.lineTo(gw,y);gctx.stroke()}}
-  function drawRunner(){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5;
+  // Offscreen layers for the rim light: the runner is drawn once, then its edges facing the light are tinted.
+  var body=document.createElement('canvas'),bctx=body.getContext('2d'),rim=document.createElement('canvas'),mctx=rim.getContext('2d');
+  function edge(dx,dy,color,alpha){
+    mctx.setTransform(1,0,0,1,0,0);mctx.globalCompositeOperation='source-over';mctx.clearRect(0,0,rim.width,rim.height);
+    mctx.drawImage(body,0,0);mctx.globalCompositeOperation='destination-out';mctx.drawImage(body,dx*dpr,dy*dpr);
+    mctx.globalCompositeOperation='source-in';mctx.globalAlpha=alpha;mctx.fillStyle=color;mctx.fillRect(0,0,rim.width,rim.height);mctx.globalAlpha=1;
+    rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(rim,0,0);rctx.restore()}
+  // Footstrike ripples: spawned when a foot lands, then carried away by the floor
+  var ripples=[];
+  function drawRipples(gy,dt,floorSpeed){
+    for(var i=ripples.length-1;i>=0;i--){var r=ripples[i];r.t+=dt;r.x-=floorSpeed*dt;if(r.t>0.7){ripples.splice(i,1);continue}
+      var k=r.t/0.7,e=1-Math.pow(1-k,2);
+      rctx.strokeStyle='rgba(46,155,173,'+(0.75*(1-k)).toFixed(3)+')';rctx.lineWidth=1.6*(1-k)+0.6;
+      rctx.beginPath();rctx.ellipse(r.x,gy,6+30*e,1.6+4.5*e,0,0,Math.PI*2);rctx.stroke();
+      rctx.strokeStyle='rgba(232,201,106,'+(0.45*(1-k)).toFixed(3)+')';rctx.lineWidth=1;
+      rctx.beginPath();rctx.ellipse(r.x,gy,3+16*e,1+2.5*e,0,0,Math.PI*2);rctx.stroke()}}
+  function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
+  function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
     rctx.fillStyle='rgba(0,0,0,.42)';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26,3.5,0,0,Math.PI*2);rctx.fill();
-    pp.draw(rctx,ph,rw/2-6,gy,SCALE)}
+    drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE);
+    if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
+    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);pp.draw(bctx,ph,rx,gy,SCALE);
+    rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
+    edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
+    edge(-0.6,-1.1,'#2E9BAD',0.55)}  // grid glow from below: teal along the underside
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt}
-    drawGrid();drawRunner();requestAnimationFrame(frame)}
+    if(pp){var prev=ph;ph=(ph+dt/CYCLE)%1;off+=pp.groundSpeed*SCALE/CYCLE*dt;
+      if(ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
+      if(prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
+    drawGrid();drawRunner(dt);requestAnimationFrame(frame)}
   function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(still)return;
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}

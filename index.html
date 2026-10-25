@@ -77,7 +77,7 @@ h2{margin:0;font-family:var(--display);font-weight:700;font-size:.85rem;letter-s
 footer{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:700;
   letter-spacing:.22em;text-transform:uppercase;font-size:.78rem;color:var(--muted)}
 footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:block}
-/* Run scene: runner loops in place while the city, grid and stars scroll past (layers move at different speeds for depth) */
+/* Run scene: the runner jogs in place along the Allegheny at night while the hills, grid and stars scroll past (layers move at different speeds for depth) */
 .scene{position:relative;height:240px;overflow:hidden;border:1px solid rgba(46,155,173,.28);
   background:linear-gradient(#0B1526 0%,#13233D 45%,#1B3456 62%,#0E1A2E 62.2%)}
 .scene>*{position:absolute;pointer-events:none}
@@ -92,8 +92,13 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
   -webkit-mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%);
           mask:linear-gradient(#000 52%,transparent 52% 56%,#000 56% 63%,transparent 63% 68%,#000 68% 74%,transparent 74% 80%,#000 80% 85%,transparent 85% 91%,#000 91%)}
 .scene .far,.scene .near{left:0;right:0;background-repeat:repeat-x;background-position:0 100%}
-.scene .far{bottom:38%;height:60px;background-image:url(scene/skyline-far.svg);background-size:480px 60px;animation:far 60s linear infinite}
-.scene .near{bottom:38%;height:40px;background-image:url(scene/skyline-near.svg);background-size:560px 40px;animation:near 26s linear infinite}
+.scene .far{bottom:calc(38% + 9px);height:64px;background-image:url(scene/ridge-far.svg);background-size:600px 64px;animation:far 118s linear infinite}
+.scene .near{bottom:calc(38% + 8px);height:46px;background-image:url(scene/ridge-near.svg);background-size:560px 46px;animation:near 45s linear infinite}
+.scene .river{left:0;right:0;bottom:38%;height:10px;background:linear-gradient(#0B1A2E,#123049)}
+.scene .glint{left:50%;bottom:38%;width:150px;height:10px;margin-left:-75px;
+  background:repeating-linear-gradient(#E8C96A 0 1.5px,transparent 1.5px 3.5px);opacity:.75;
+  -webkit-mask:radial-gradient(ellipse 50% 100% at 50% 0,#000 35%,transparent 100%);mask:radial-gradient(ellipse 50% 100% at 50% 0,#000 35%,transparent 100%);
+  animation:glint 2.4s ease-in-out infinite alternate}
 .scene .horizon{left:0;right:0;bottom:38%;height:2px;margin-bottom:-1px;background:#2E9BAD;box-shadow:0 0 10px #2E9BAD,0 0 2px #F6F4EF}
 .scene .floor{left:0;right:0;bottom:0;height:38%;overflow:hidden;background:#0E1A2E}
 .scene .grid{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -102,7 +107,8 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 .scene::before,.scene::after{content:"";position:absolute;z-index:3;width:18px;height:18px;border:0 solid #2E9BAD}
 .scene::before{left:-1px;top:-1px;border-top-width:3px;border-left-width:3px}
 .scene::after{right:-1px;bottom:-1px;border-bottom-width:3px;border-right-width:3px}
-@keyframes far{to{background-position:-480px 100%}}
+@keyframes far{to{background-position:-600px 100%}}
+@keyframes glint{0%{opacity:.55;transform:scaleX(.94)}100%{opacity:.85;transform:scaleX(1.04)}}
 @keyframes near{to{background-position:-560px 100%}}
 @keyframes slide{to{background-position:-520px 0}}
 @media (prefers-reduced-motion:reduce){.scene *{animation:none!important}}
@@ -133,8 +139,8 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
     <h1 class="on" style="--i:1">tristan.inmotion</h1>
   </header>
 
-  <div class="scene on" style="--i:1.5" role="img" aria-label="Cartoon Tristan running through a night city under a gold sun">
-    <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div>
+  <div class="scene on" style="--i:1.5" role="img" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun">
+    <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
     <div class="floor"><canvas class="grid"></canvas></div><div class="horizon"></div>
     <canvas class="runcv"></canvas>
   </div>
