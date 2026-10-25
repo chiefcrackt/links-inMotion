@@ -33,10 +33,10 @@ header{display:flex;flex-direction:column;align-items:center;gap:14px;text-align
 @keyframes roll{0%,100%{transform:translateX(0)}50%{transform:translateX(-14px)}}
 h1{margin:0;font-family:var(--display);font-weight:900;font-size:clamp(2.4rem,9vw,3.2rem);line-height:.95;
   letter-spacing:.02em;color:var(--gold);text-transform:uppercase;text-shadow:-2px 0 var(--teal),2px 0 rgba(232,201,106,.35);
-  text-wrap:balance;animation:glitch 6s steps(1) infinite}
-@keyframes glitch{0%,92%,100%{text-shadow:-2px 0 var(--teal),2px 0 rgba(232,201,106,.35);transform:none}
-  93%{text-shadow:-7px 0 var(--teal),7px 0 var(--gold);transform:translateX(3px)}
-  95%{text-shadow:5px 0 var(--teal),-5px 0 var(--gold);transform:translateX(-2px)}}
+  text-wrap:balance;animation:glitch 4.5s steps(1) infinite}
+@keyframes glitch{0%,90%,100%{text-shadow:-2px 0 var(--teal),2px 0 rgba(232,201,106,.35);transform:none}
+  91%{text-shadow:-7px 0 var(--teal),7px 0 var(--gold);transform:translateX(3px)}
+  94%{text-shadow:5px 0 var(--teal),-5px 0 var(--gold);transform:translateX(-2px)}}
 .note{margin:0;color:var(--muted);font-size:.85rem}
 .hud{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px 14px;text-align:center}
 .hud::before,.hud::after,.row::before,.row::after{content:"";position:absolute;width:18px;height:18px;border:0 solid var(--teal)}
