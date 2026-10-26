@@ -85,58 +85,69 @@ function makePuppet(imgs, parts, opt){
   return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
 }
 
-/* Hooper's joints, in the source parts sheet's pixels. */
-var DOGPARTS={"torso":{"pivot":[113,195],"hip":[113,195],"sho":[410,202],"neck":[470,65],"tail":[20,95]},"head":{"pivot":[92,234]},"tail":{"pivot":[135,27]},"fu":{"pivot":[51,34],"end":[51,144]},"fl":{"pivot":[37,36],"end":[33,198]},"hu":{"pivot":[68,67],"end":[93,247]},"hl":{"pivot":[38,33],"end":[63,126]}};
-/* Hooper: a trotting cutout dog. Each leg is two pieces (front: upper leg + forearm/paw, hind: thigh + hock/paw).
-   Diagonal pairs move together (a trot). In stance the leg is nearly straight; in swing the lower piece folds
-   so the paw lifts and tucks. Body height is solved each frame so the lowest paw touches the ground.
-   Units are source pixels of the parts sheet; draw() scales to the screen. */
+/* Hooper's joints, in the v2 parts sheet's pixels (each piece's own coordinates). */
+var DOGPARTS={
+ torso:{pivot:[62,52],hip:[62,52],sho:[272,74],neck:[286,100],tail:[22,50]},
+ head:{pivot:[84,178],scale:0.84},
+ tail:{pivot:[34.7,68],scale:0.62},
+ fu:{pivot:[74.4,34.1],end:[31.7,101.2]},fu_far:{pivot:[88.2,30],end:[31.5,108.9]},
+ fl:{pivot:[43.1,29.8],end:[69.1,163]},fl_far:{pivot:[37.7,30.1],end:[47.4,154]},
+ hu:{pivot:[43.7,34.9],end:[116.2,102.7]},hu_far:{pivot:[50.1,34.7],end:[102.2,103.9]},
+ hl:{pivot:[69.9,29.1],end:[43.9,179]}
+};
+/* Hooper: a trotting cutout dog. Each leg is two pieces (front: upper leg + forearm/paw, hind: haunch + hock/paw).
+   Leg angles are set like a real dog's (degrees from straight down, + = forward): elbow behind the shoulder, stifle
+   ahead of the hip, hind paw back under the rump. Diagonal pairs move together (a trot). Body height is solved each
+   frame so the lowest paw touches the ground. Far legs use the *_far pieces (or the near ones) drawn darker. */
 function makeDog(imgs, parts, opt){
   opt=opt||{};
-  var R=Math.PI/180,T=Math.PI*2,K=opt.imgScale||1;
+  var R=Math.PI/180,T=Math.PI*2,K=opt.imgScale||1,P=parts,tor=P.torso;
   function sub(a,b){return [a[0]-b[0],a[1]-b[1]]}
-  function rot(v,a){var c=Math.cos(a*R),s=Math.sin(a*R);return [v[0]*c-v[1]*s,v[0]*s+v[1]*c]}
   function add(a,b){return [a[0]+b[0],a[1]+b[1]]}
-  var P=parts,tor=P.torso;
+  function rot(v,a){var c=Math.cos(a*R),s=Math.sin(a*R);return [v[0]*c-v[1]*s,v[0]*s+v[1]*c]}
   function rel(n){return sub(tor[n],tor.pivot)}
-  var HS=1.12,HIP=[rel('hip')[0]-60,rel('hip')[1]-10],   // hips set back and back legs 12% bigger so the haunch fills the rump
-      SHO=rel('sho'),NECK=rel('neck'),TAILP=rel('tail');
-  function bone(n){return sub(P[n].end,P[n].pivot)}
-  var FU=bone('fu'),FL=bone('fl'),HU=bone('hu').map(function(v){return v*HS}),HL=bone('hl').map(function(v){return v*HS}),FAR=[22,-8];
+  var HIP=rel('hip'),SHO=rel('sho'),NECK=rel('neck'),TAILP=rel('tail'),FAR=opt.far||[16,-6];
+  function bone(n){var v=sub(P[n].end,P[n].pivot);return {rest:Math.atan2(v[0],v[1])/R,len:Math.hypot(v[0],v[1])}}
+  function has(n){return imgs[n]&&(imgs[n].naturalWidth||imgs[n].width)}
+  function nm(n,far){return far&&has(n+'_far')?n+'_far':n}
+  var B={};['fu','fu_far','fl','fl_far','hu','hu_far','hl'].forEach(function(n){if(P[n])B[n]=bone(n)});
   var dark={};
   function shade(n){if(dark[n])return dark[n];var s=imgs[n],c=document.createElement('canvas');c.width=s.naturalWidth||s.width;c.height=s.naturalHeight||s.height;
-    var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.34)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
+    var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.36)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
   function piece(ctx,n,at,ang,dk,sc){var i=P[n];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(ang*R);if(sc)ctx.scale(sc,sc);ctx.scale(1/K,1/K);
     ctx.drawImage(dk?shade(n):imgs[n],-i.pivot[0]*K,-i.pivot[1]*K);ctx.restore()}
+  function pt(o,l,a){return [o[0]+l*Math.sin(a*R),o[1]+l*Math.cos(a*R)]}
   function sm(x){return x*x*(3-2*x)}
-  // Angles in degrees, canvas rotation (+ = clockwise, which swings a hanging leg backward).
   // p: 0 = paw lands in front, 0..0.5 stance (paw sweeps back), 0.5..1 swing forward.
-  function front(p){p=((p%1)+1)%1;var up=-22*Math.cos(T*p),lo=0;
-    if(p>0.5){var u=(p-0.5)/0.5;lo=78*Math.pow(Math.sin(Math.PI*Math.min(1,u*1.15)),1.2)}   // wrist folds back, paw tucks up
-    return {up:up,lo:up+lo}}
-  function hind(p){p=((p%1)+1)%1;var up=-20*Math.cos(T*p)+4,lo=-6;
-    if(p>0.5){var u=(p-0.5)/0.5;lo=-6-46*Math.sin(Math.PI*u)}                               // hock flexes, paw comes forward
-    else{lo=-6+10*sm(Math.min(1,p/0.45))}                                                   // push-off extends the hock
-    return {up:up,lo:up+lo}}
-  function chain(at,u,l,ang){var k=add(at,rot(u,ang.up));return {k:k,paw:add(k,rot(l,ang.lo))}}
+  var FU0=opt.frontUpper==null?-16:opt.frontUpper, FS=opt.frontSwing||22, HU0=opt.hindUpper==null?30:opt.hindUpper, HS=opt.hindSwing||20;
+  function front(p){p=((p%1)+1)%1;var U=FU0+FS*Math.cos(T*p),r=18;
+    if(p>0.5){var u=(p-0.5)/0.5;r=18-95*Math.pow(Math.sin(Math.PI*Math.min(1,u*1.12)),1.3)}   // wrist folds back, paw tucks up
+    return {U:U,L:U+r}}
+  function hind(p){p=((p%1)+1)%1;var U=HU0+HS*Math.cos(T*p),r=-52;
+    if(p>0.5){var u=(p-0.5)/0.5;r=-52-38*Math.sin(Math.PI*u)}                                 // stifle and hock flex, paw lifts
+    else r=-52+6*sm(Math.min(1,p/0.45));                                                        // push-off
+    return {U:U,L:U+r}}
+  function chain(at,u,l,a){var k=pt(at,B[u].len,a.U);return {k:k,paw:pt(k,B[l].len,a.L),ru:B[u].rest-a.U,rl:B[l].rest-a.L}}
   function pose(p){
-    var pitch=1.4*Math.sin(T*2*p+0.6);
+    var pitch=1.2*Math.sin(T*2*p+0.6);
     var sho=rot(SHO,pitch),hip=rot(HIP,pitch);
-    var nf=front(p),ff=front(p+0.5),nh=hind(p+0.5),fh=hind(p);   // trot: near-front + far-hind together
-    var a=chain(sho,FU,FL,nf),b=chain(add(sho,FAR),FU,FL,ff),c=chain(hip,HU,HL,nh),d=chain(add(hip,FAR),HU,HL,fh);
-    var low=Math.max(a.paw[1],b.paw[1],c.paw[1],d.paw[1])+10;      // +10: thickness of the pad below the bone end
-    return {pitch:pitch,sho:sho,hip:hip,nf:nf,ff:ff,nh:nh,fh:fh,a:a,b:b,c:c,d:d,y:-low}}
-  var stride=(function(){var L=Math.hypot(FU[0],FU[1])+Math.hypot(FL[0],FL[1]);return 4*L*Math.sin(22*R)})();
+    var a=chain(sho,'fu','fl',front(p)),b=chain(add(sho,FAR),nm('fu',1),nm('fl',1),front(p+0.5)),
+        c=chain(hip,'hu','hl',hind(p+0.5)),d=chain(add(hip,FAR),nm('hu',1),nm('hl',1),hind(p));   // trot: near-front + far-hind together
+    var low=Math.max(a.paw[1],b.paw[1],c.paw[1],d.paw[1]);
+    return {pitch:pitch,sho:sho,hip:hip,a:a,b:b,c:c,d:d,y:-low}}
+  // ground covered per cycle, from how far the planted front paw sweeps back during stance
+  var stride=(function(){var f0=chain([0,0],'fu','fl',front(0.02)).paw[0],f1=chain([0,0],'fu','fl',front(0.48)).paw[0];return (f0-f1)/0.46})();
   function draw(ctx,p,x,gy,scale,lift){
     var q=pose(p);ctx.save();ctx.translate(x,gy);ctx.scale(scale,scale);ctx.translate(0,q.y-(lift||0));
     var neck=rot(NECK,q.pitch),tl=rot(TAILP,q.pitch);
-    function leg(u,l,at,ang,ch,dk){var sc=u==='hu'?HS:0;piece(ctx,l,ch.k,ang.lo,dk,sc);piece(ctx,u,at,ang.up,dk,sc)}
-    leg('fu','fl',add(q.sho,FAR),q.ff,q.b,true);leg('hu','hl',add(q.hip,FAR),q.fh,q.d,true);
+    function leg(u,l,at,ch,dk){piece(ctx,l,ch.k,ch.rl,dk);piece(ctx,u,at,ch.ru,dk)}
+    leg(nm('fu',1),nm('fl',1),add(q.sho,FAR),q.b,true);leg(nm('hu',1),nm('hl',1),add(q.hip,FAR),q.d,true);
+    piece(ctx,'tail',tl,q.pitch-14+9*Math.sin(T*2*p+1.2),false,P.tail.scale);      // stubby wag on every step
     piece(ctx,'torso',[0,0],q.pitch);
-    leg('hu','hl',q.hip,q.nh,q.c,false);leg('fu','fl',q.sho,q.nf,q.a,false);
-    piece(ctx,'head',[neck[0]-46,neck[1]+62],6-q.pitch*0.6+2*Math.sin(T*2*p+1));   // nose level, head set down into the shoulders
+    leg('hu','hl',q.hip,q.c,false);leg('fu','fl',q.sho,q.a,false);
+    piece(ctx,'head',neck,-q.pitch*0.6+1.5*Math.sin(T*2*p+1),false,P.head.scale);   // nose level, a small nod each step
     ctx.restore()}
-  return {draw:draw,stride:stride}
+  return {draw:draw,stride:stride,pose:pose}
 }
 
 /* Run scene for the links page: draws the cutout runner and the grid floor each frame, with the floor
@@ -187,7 +198,7 @@ function makeDog(imgs, parts, opt){
   function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
   function jump(){if(G&&!G.over)hideHint();if(!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
   // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
-  var dog=null,hd=null,DSCALE=0.075,STAY=10;
+  var dog=null,hd=null,DSCALE=0.12,STAY=10,HOP=106;   // HOP: hop height in source px
   function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
   function hooper(){if(!dog)return;
     if(!hd){hd={mode:'in',t:0,p:0,x:-60,hop:-1};setPaw(true)}
@@ -202,7 +213,7 @@ function makeDog(imgs, parts, opt){
     hd.p=(hd.p+dt*Math.max(0,floorSpeed+vx)/stridePx)%1;
     if(hd.hop>-1){hd.hop+=dt;if(hd.hop>0.5)hd.hop=-1}}
   function drawDog(ctx,gy){if(!hd)return;var lift=0,air=0;
-    if(hd.hop>0){var u=hd.hop/0.5;lift=170*4*u*(1-u);air=lift/170}
+    if(hd.hop>0){var u=hd.hop/0.5;lift=HOP*4*u*(1-u);air=lift/HOP}
     ctx.fillStyle='rgba(0,0,0,'+(0.38*(1-0.5*air)).toFixed(3)+')';ctx.beginPath();ctx.ellipse(hd.x+20,gy,22*(1-0.4*air),3*(1-0.4*air),0,0,Math.PI*2);ctx.fill();
     dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
   // ---- Trail mini-game: roots and rocks scroll in on the floor; tap to jump them. One clip ends the run.
@@ -316,9 +327,9 @@ function makeDog(imgs, parts, opt){
   function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
-  function loadDog(){var dn=['torso','head','fu','fl','hu','hl'],di={},dl=dn.length;
-    dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
-      i.src='scene/hooper/'+n+'.webp?v=2';di[n]=i})}
+  function loadDog(){var dn=['torso','head','tail','fu','fu_far','fl','fl_far','hu','hu_far','hl'],di={},dl=dn.length;
+    dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.5});if(paw&&!(G&&!G.over))paw.hidden=false}};
+      i.src='scene/hooper/'+n+'.webp?v=3';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
