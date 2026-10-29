@@ -1,5 +1,9 @@
 # Tristan wardrobe
 
+The race-day and winter front torso profiles are slimmed by the runtime fitter
+to remove the inherited hydration-vest chest bulge. Shoulder anchors, back edges,
+and the jacket zipper remain in place. Trail's actual vest is unchanged.
+
 Race day, trail runner, and cold weather are the final corrected outfits from
 `chiefcrackt/inmotion-video` commit `fea7f9f`. These PNGs are local copies so
 the links page does not depend on another website or cross-origin image loads.
