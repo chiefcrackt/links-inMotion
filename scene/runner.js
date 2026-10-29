@@ -189,6 +189,20 @@ function makeDog(imgs, parts, opt){
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   var CYCLE=1.05, SCALE=0.105, dpr=1, gw=0, gh=0, rw=0, rh=0, off=0, ph=0.1, last=0, on=true, pp=null;
   var names=['head','torso','shorts','thigh','shin','shoe','upperarm','forearm','forearm_far'],imgs={},left=names.length;
+  // One independent choice per document load; never saved in localStorage.
+  var outfits=['race','trail','winter'],outfit=outfits[Math.floor(Math.random()*outfits.length)];
+  function outfitImages(){
+    var originals=imgs;
+    if(typeof window.fitRiverOutfit!=='function'){box.dataset.runnerOutfit='original';return Promise.resolve()}
+    var required=names.filter(function(n){return n!=='head'&&(outfit==='winter'||n!=='forearm'&&n!=='forearm_far')});
+    return Promise.all(required.map(function(n){return new Promise(function(resolve,reject){
+      var im=new Image();im.onload=function(){resolve([n,im])};im.onerror=function(){reject(new Error('Outfit image failed'))};
+      im.src='scene/outfits/'+outfit+'/'+n+'.png?v=1';
+    })})).then(function(entries){
+      var artwork={};entries.forEach(function(e){artwork[e[0]]=e[1]});
+      imgs=window.fitRiverOutfit(artwork,originals,outfit);box.dataset.runnerOutfit=outfit;
+    }).catch(function(){imgs=originals;box.dataset.runnerOutfit='original'});
+  }
   function size(){dpr=Math.min(window.devicePixelRatio||1,2);
     var g=grid.getBoundingClientRect(),r=run.getBoundingClientRect();gw=g.width;gh=g.height;rw=r.width;rh=r.height;
     grid.width=Math.round(gw*dpr);grid.height=Math.round(gh*dpr);gctx.setTransform(dpr,0,0,dpr,0,0);
@@ -360,6 +374,6 @@ function makeDog(imgs, parts, opt){
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
     dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
       i.src='scene/hooper/'+n+'.webp?v=5';di[n]=i})}
-  names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)start()};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
+  names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)outfitImages().then(start)};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
