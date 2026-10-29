@@ -41,3 +41,7 @@ No invented product recommendations are seeded. Add individual Rendezvu links or
 The hosted backend is https://tristan-inmotion-gear.easytick4097.chatgpt.site. Its project and saved-version references are in `deployment.json`. The local Sites source checkout is `hosted-service/` (a separate source repository, ignored by the GitHub Pages repository). Future edits should reopen this same Sites project rather than create another.
 
 The hosted adapter is `hosted-service/gear/handler.ts`, called from the starter Worker entry point while preserving the Sites build integration. The D1 migration is generated from `hosted-service/db/schema.ts`. Before deploying an editor change, copy the four canonical files from `product-admin/` to `hosted-service/gear/`, then build and publish through the Sites workflow. The bootstrap setup secret is in hosted runtime configuration and is deliberately absent from both repositories.
+
+## Headlamp import
+
+`catalog-imports.mjs` adds the Fenix HM55R once, using the image, original personal note, and host-tagged URL from Tristan's Rendezvu collection. It is applied transactionally to the existing catalog on its next read after deployment. A durable marker prevents duplicates and preserves all future edits, hiding, or deletion through the editor. This is runtime content initialization, separate from schema migrations. Copy this module to `hosted-service/gear/` with future source updates. Verify with `node tests/gear-import.mjs`.

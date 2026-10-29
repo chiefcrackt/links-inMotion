@@ -2,6 +2,7 @@ import adminHTML from './admin.html';
 import editorJS from './editor.js';
 import editorCSS from './editor.css';
 import { handle } from './backend.mjs';
+import { applyCatalogImports } from './catalog-imports.mjs';
 const headers = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
@@ -18,6 +19,7 @@ export default {
       const asset = path === '/' || path === '/admin' || path === '/admin/' ? [adminHTML, 'text/html; charset=utf-8'] : path === '/editor.js' ? [editorJS, 'text/javascript; charset=utf-8'] : path === '/editor.css' ? [editorCSS, 'text/css; charset=utf-8'] : null;
       if (asset) return new Response(asset[0], { headers: { ...headers, 'Content-Type': asset[1] } });
     }
+    if (request.method === 'GET' && (path === '/api/products' || path === '/api/admin/products')) await applyCatalogImports(env);
     const response = await handle(request, env);
     const wrapped = new Response(response.body, response);
     for (const [key, value] of Object.entries(headers)) if (!wrapped.headers.has(key)) wrapped.headers.set(key, value);
