@@ -1,0 +1,27 @@
+{
+  "name": "links-inmotion",
+  "version": "1.0.0",
+  "description": "Link in bio page",
+  "scripts": {
+    "preview": "node tests/gear-preview.mjs",
+    "test": "npm run test:api && npm run test:import && npm run test:browser",
+    "test:api": "node tests/gear-api.mjs",
+    "test:import": "node tests/gear-import.mjs",
+    "test:browser": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiefcrackt/links-inMotion.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chiefcrackt/links-inMotion/issues"
+  },
+  "homepage": "https://github.com/chiefcrackt/links-inMotion#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.20.0"
+  }
+}
