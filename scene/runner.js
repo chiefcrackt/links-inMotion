@@ -99,12 +99,9 @@ var DOGPARTS={
  hl:{s:1.02,pivot:[40,28],end:[37.5,150]},
  hp:{s:1.02,pivot:[37.5,28],end:[77,151]}
 };
-/* Hooper: a galloping cutout dog (rotary gallop). Footfalls in one stride: near hind, far hind, far front, near front,
-   then a moment in the air with the legs gathered. Each bone follows keyframes (degrees from straight down,
-   + = forward) through: plant -> sweep back -> push off -> fold -> swing -> reach. The wrist flicks the front paw up
-   behind the forearm after push-off; the hock closes to lift the hind paw, then opens to drive.
-   The body pitches (chest up while the hinds push, rump up while the fronts land) and flexes a little.
-   Body height follows the lowest paw, plus a lift during the flight phase. */
+/* Hooper: paw-driven rotary gallop. Three-bone legs fold at elbows and hocks;
+   stance paws sweep backward at ground speed, with a smooth airborne recovery.
+   The body follows a continuous compression/flight curve, independent of which paw is lowest. */
 function makeDog(imgs, parts, opt){
   opt=opt||{};
   var R=Math.PI/180,T=Math.PI*2,K=opt.imgScale||1,P=parts,FAR=opt.far||[14,-4];
@@ -120,26 +117,41 @@ function makeDog(imgs, parts, opt){
     var x=c.getContext('2d');x.drawImage(s,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.38)';x.fillRect(0,0,c.width,c.height);return dark[n]=c}
   function piece(ctx,n,at,ang,dk){var p=P[n];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(ang*R);ctx.scale(p.s/K,p.s/K);
     ctx.drawImage(dk?shade(n):imgs[n],-p.pivot[0]*K,-p.pivot[1]*K);ctx.restore()}
-  function cr(k,p){var n=k.length,x=((p%1)+1)%1*n,i=Math.floor(x),t=x-i,a=k[(i-1+n)%n],b=k[i%n],c=k[(i+1)%n],d=k[(i+2)%n];
-    return 0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)}
-  // Keyframes per bone, 8 per stride, starting at that paw's touchdown. Stance is roughly the first 3 keys.
-  //                  plant  sweep  under  push   fold   fold   swing  reach
-  var KF={fu:[         26,     8,   -12,   -28,   -18,     4,    22,    30],    // shoulder rolls forward to reach, back to push
-          fl:[         22,     8,   -10,   -32,   -28,    -6,    14,    26],
-          fp:[         26,    10,    -4,   -46,  -112,   -84,    -6,    30],    // wrist flicks the paw up behind, then it reaches out
-          hu:[         20,     8,    -4,   -14,    -8,     6,    16,    22],    // thigh swings with the haunch
-          hl:[        -14,   -26,   -40,   -54,   -66,   -54,   -36,   -18],    // shank angles back from the knee
-          hp:[          6,    -6,   -22,   -46,     6,    16,    16,    10]};   // hock: straight on the push, snaps shut to lift the paw, opens to reach
-  var OFF={nh:0,fh:0.07,ff:0.40,nf:0.48};                                       // when each paw lands, as a fraction of the stride
-  function chain(at,f,p){var a=f?['fu','fl','fp']:['hu','hl','hp'],A=a.map(function(n){return cr(KF[n],p)});
-    var k1=pt(at,B[a[0]].len,A[0]),k2=pt(k1,B[a[1]].len,A[1]),paw=pt(k2,B[a[2]].len,A[2]);
-    return {n:a,j:[at,k1,k2],paw:paw,r:[B[a[0]].rest-A[0],B[a[1]].rest-A[1],B[a[2]].rest-A[2]]}}
+  // Rotary gallop: hind pair drives, front pair catches, then gathered flight.
+  // Solve joints from paw paths so planted feet travel at one ground speed.
+  var stride=680, STANCE=0.30;
+  var OFF={nh:0,fh:0.07,ff:0.40,nf:0.48};
+  function chain(at,f,p,rootY){
+    p=((p%1)+1)%1;
+    var a=f?['fu','fl','fp']:['hu','hl','hp'];
+    var reach=f?120:85, x, lift=0, curl=0;
+    if(p<STANCE){x=reach-stride*p}
+    else{
+      var u=(p-STANCE)/(1-STANCE), h=u*u*(3-2*u);
+      // Hermite recovery preserves the backwards velocity at lift-off and landing.
+      x=(reach-stride*STANCE)*(1-h)+reach*h-stride*(1-STANCE)*(2*u*u*u-3*u*u+u);
+      lift=(f?150:125)*Math.pow(Math.sin(Math.PI*u),2);
+      curl=Math.pow(Math.sin(Math.PI*u),2);
+    }
+    var angle=f?5-115*curl:18+65*curl;
+    var paw=[at[0]+x,-rootY-lift];
+    var wrist=[paw[0]-B[a[2]].len*Math.sin(angle*R),paw[1]-B[a[2]].len*Math.cos(angle*R)];
+    var dx=wrist[0]-at[0],dy=wrist[1]-at[1],l1=B[a[0]].len,l2=B[a[1]].len;
+    var dist=Math.max(Math.abs(l1-l2)+0.01,Math.min(l1+l2-0.01,Math.hypot(dx,dy)));
+    var bend=Math.acos(Math.max(-1,Math.min(1,(l1*l1+dist*dist-l2*l2)/(2*l1*dist))))/R;
+    var upper=Math.atan2(dx,dy)/R+(f?-bend:bend);
+    var knee=pt(at,l1,upper);
+    var lower=Math.atan2(wrist[0]-knee[0],wrist[1]-knee[1])/R;
+    var ankle=pt(knee,l2,lower),tip=pt(ankle,B[a[2]].len,angle);
+    return {n:a,j:[at,knee,ankle],paw:tip,r:[B[a[0]].rest-upper,B[a[1]].rest-lower,B[a[2]].rest-angle]};
+  }
   function body(p){
-    var pitch=-5*Math.cos(T*(p-0.12))+1.5*Math.sin(T*2*p);             // chest up on the hind push, rump up on the front landing
-    var flex=1+0.035*Math.cos(T*(p-0.52));                              // stretched when the legs are spread, gathered in the air
-    var air=p>0.8?Math.sin(Math.PI*(p-0.8)/0.2):0;                      // flight after the last front paw leaves
-    var arch=4+21*Math.cos(T*(p-0.97));                                 // spine: rounded up when the legs bunch under (+), long and flat when they reach out
-    return {pitch:pitch,flex:flex,air:air,arch:arch}}
+    var pitch=-3.5*Math.cos(T*(p-0.12));
+    var flex=1+0.018*Math.cos(T*(p-0.48));
+    var air=p>0.78?Math.pow(Math.sin(Math.PI*(p-0.78)/0.22),2):0;
+    var arch=3+10*Math.cos(T*(p-0.94));
+    return {pitch:pitch,flex:flex,air:air,arch:arch};
+  }
   // Spine bend. The torso is drawn as thin vertical strips laid along a curve; points on the body (hip, shoulder,
   // neck) ride the same curve. u runs -1 (rump) .. +1 (chest) across the torso picture.
   var TP=P.torso,TW={xm:232,half:226,n:32},OV=7;   // OV: strip overlap (torso px) so no gap opens where strips tilt apart
@@ -148,13 +160,14 @@ function makeDog(imgs, parts, opt){
   function thAt(u,A){return Math.atan(2*A*u/TW.half)}                                  // radians
   function onBody(v,b){var u=uOf(v);return rot([v[0]*b.flex,v[1]+dyAt(u,b.arch)*TP.s],b.pitch)}
   var U_NECK=uOf(NECK);
-  function pose(p){p=((p%1)+1)%1;var b=body(p);
+  function pose(p){
+    p=((p%1)+1)%1;var b=body(p);
     var sho=onBody(SHO,b),hip=onBody([0,0],b);
-    var a=chain(sho,1,p-OFF.nf),bb=chain(add(sho,FAR),1,p-OFF.ff),c=chain(hip,0,p-OFF.nh),d=chain(add(hip,FAR),0,p-OFF.fh);
-    var low=Math.max(a.paw[1],bb.paw[1],c.paw[1],d.paw[1]);
-    return {b:b,sho:sho,hip:hip,a:a,bb:bb,c:c,d:d,y:-low-14*b.air}}
-  // ground covered per stride: how far the near front paw sweeps back (relative to the body) while it's planted
-  var stride=(function(){var s=0.02,e=0.30;return (chain([0,0],1,s).paw[0]-chain([0,0],1,e).paw[0])/(e-s)})();
+    var y=-330+9*Math.cos(T*(p-0.12))-24*b.air;
+    return {b:b,sho:sho,hip:hip,
+      a:chain(sho,1,p-OFF.nf,y),bb:chain(add(sho,FAR),1,p-OFF.ff,y),
+      c:chain(hip,0,p-OFF.nh,y),d:chain(add(hip,FAR),0,p-OFF.fh,y),y:y};
+  }
   var LAYS={};
   function layer(ctx,k){var w=ctx.canvas.width,h=ctx.canvas.height,L=LAYS[k]||(LAYS[k]=document.createElement('canvas'));if(L.width!==w||L.height!==h){L.width=w;L.height=h}
     var o=L.getContext('2d');o.setTransform(1,0,0,1,0,0);o.globalCompositeOperation='source-over';o.clearRect(0,0,w,h);o.setTransform(ctx.getTransform());return L}
