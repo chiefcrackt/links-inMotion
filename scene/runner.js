@@ -1,3 +1,18 @@
+/* TODO Claude - task 7: split animation code before implementing task 5 in index.html.
+   Make this a separate behavior-preserving change. Extract focused files for the
+   runner/Hooper rigs and joint data, outfit selection and asset loading, trail-game
+   rules/scoring, and scene rendering/timing/input. Keep a small scene entry point
+   and explicit interfaces for shared state; choose file names to suit the code.
+   Preserve the authored gait, joints, layering, lighting, jump/stumble timing,
+   Hooper interactions, obstacle difficulty, milestones, best-score storage key,
+   per-load random outfits and original-art fallback, reduced-motion behavior,
+   offscreen pausing, resize handling, and existing accessible controls.
+   Keep GitHub Pages deployment static with no build system or new framework.
+   Update script loading and any tests that inspect source boundaries. Run the
+   existing gait/outfit checks and npm test; add meaningful regression coverage
+   for behavior affected by extraction. Compare desktop/mobile appearance before
+   and after. Do not bundle new gameplay or visual redesign into this refactor.
+*/
 /* Joints for each cut-out piece, in the source drawing's pixels. */
 var PARTS={"upperarm":{"pivot":[49,48],"end":[54,248]},"forearm":{"pivot":[34,36],"end":[43,221]},"thigh":{"pivot":[91.94999999999999,73.50000000000003],"end":[98.25,327.6]},"shin":{"pivot":[56,40],"end":[44,280]},"shoe":{"pivot":[55,26],"end":[211,26],"sole":[[-45,83],[55,91],[145,78],[156,58]]},"shorts":{"pivot":[94.94999999999999,95.50000000000003],"waist":[-3.1499999999999773,-71.50000000000001]},"torso":{"pivot":[108,346],"neck":[47,-338],"shoulder":[-25,-288]},"head":{"pivot":[90,195]}};
 /* Cutout runner built from a parts sheet. Each part has a pivot (the joint it hangs from) and an end
