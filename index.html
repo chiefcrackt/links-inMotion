@@ -182,6 +182,23 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   </div>
 
 
+  <!-- TODO Claude - task 5: implement after the task 7 refactor in scene/runner.js,
+       as a separate change. Add one compact "Next up" card here, between the
+       running scene and social links, matching the navy/teal/gold palette,
+       bracket details, typography, spacing, and narrow mobile layout.
+       Support a label, title, short description, optional date, and destination
+       link for a race, latest video, or current challenge. Keep manually edited
+       content in one small configuration file; document its fields in README.md.
+       Hide the card without an empty gap when content is absent or disabled.
+       Do not invent a real race, date, video, or challenge: default to disabled
+       until Tristan provides content. No admin/backend expansion in this task.
+       Render configured text safely, validate destination URLs, use semantic
+       markup and visible keyboard focus, and respect reduced-motion settings.
+       Keep existing links, game, audio, gear, and sharing metadata working.
+       Add browser coverage for configured/absent content, optional date, link
+       destination, and mobile overflow; run npm test and inspect desktop/mobile.
+  -->
+
   <section aria-labelledby="h-watch">
     <h2 class="on" style="--i:2" id="h-watch">Watch</h2>
     <a class="row on" style="--i:3" href="https://www.youtube.com/@tristan.inmotion" target="_blank" rel="noopener">
