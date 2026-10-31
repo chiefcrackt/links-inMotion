@@ -475,6 +475,7 @@ function makeDog(imgs, parts, opt){
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
     drawGrid();drawRunner(dt);
+    if(box.classList.contains('dogout')!==!!hd)box.classList.toggle('dogout',!!hd);   // fade the buttons on phones while Hooper is out (he runs under them)
     if(still&&jt<0&&!hd&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
     requestAnimationFrame(frame)}
   var btn=box.querySelector('.jump'),paw=box.querySelector('.paw'),swap=box.querySelector('.outfit'),aidBtn=box.querySelector('.aid');
