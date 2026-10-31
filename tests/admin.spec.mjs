@@ -4,6 +4,11 @@ import { readFileSync } from 'node:fs';
 // A fake GitHub that holds the repo's real data files in memory.
 function fakeGitHub(page, { push = true, conflictOnce = false } = {}) {
   const files = new Map(['gear/products.json', 'next-up/schedule.json'].map(path => [path, { text: readFileSync(path, 'utf8'), sha: 'sha-0' }]));
+  // Editor scenarios have a stable fixture, independent of the published catalog.
+  files.get('gear/products.json').text = JSON.stringify({ products: [{
+    id: 'headlamp', name: 'Fenix HM55R Rechargeable Headlamp', brand: 'Fenix',
+    url: 'https://example.com/headlamp', image: '', visible: true,
+  }] });
   const puts = [];
   let version = 0, conflict = conflictOnce;
   page.route('https://api.github.com/**', async route => {
@@ -131,4 +136,51 @@ test('remembers the key on this device and signs out cleanly', async ({ page }) 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.locator('#login')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('tim_editor_key'))).toBeNull();
+});
+
+test('an open product edit follows reordering and rejects a deleted target', async ({ page }) => {
+  const gh = fakeGitHub(page);
+  await signIn(page);
+  await page.locator('#tab-gear').click();
+  await page.locator('#gear-add').click();
+  await page.locator('#gear-form [name=name]').fill('Second product');
+  await page.locator('#gear-form [name=url]').fill('https://example.com/second');
+  await page.locator('#gear-form button[type=submit]').click();
+  await expect(page.locator('#gear-form')).toBeHidden();
+  const secondId = gh.json('gear/products.json').products[1].id;
+  await page.getByRole('button', { name: 'Edit Second product', exact: true }).click();
+  await page.getByRole('button', { name: 'Move Second product up', exact: true }).click();
+  await expect(page.locator('#gear-list li').first()).toContainText('Second product');
+  await page.locator('#gear-form [name=name]').fill('Updated second');
+  await page.locator('#gear-form button[type=submit]').click();
+  await expect(page.locator('#gear-form')).toBeHidden();
+  expect(gh.json('gear/products.json').products.map(p => [p.id, p.name])).toEqual([
+    [secondId, 'Updated second'], ['headlamp', 'Fenix HM55R Rechargeable Headlamp'],
+  ]);
+  await page.getByRole('button', { name: 'Edit Updated second', exact: true }).click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Delete Updated second', exact: true }).click();
+  await expect(page.locator('#gear-list li')).toHaveCount(1);
+  const writes = gh.puts.length;
+  await page.locator('#gear-form button[type=submit]').click();
+  await expect(page.locator('#notice')).toContainText('Reopen it before saving');
+  expect(gh.puts).toHaveLength(writes);
+  expect(gh.json('gear/products.json').products[0].id).toBe('headlamp');
+});
+
+test('an open race edit follows deletion of another race', async ({ page }) => {
+  const gh = fakeGitHub(page);
+  await signIn(page);
+  const before = gh.json('next-up/schedule.json').items;
+  const target = before[1];
+  await page.getByRole('button', { name: 'Edit ' + target.title, exact: true }).click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Delete ' + before[0].title, exact: true }).click();
+  await expect(page.locator('#nu-list li')).toHaveCount(before.length - 1);
+  await page.locator('#nu-form [name=title]').fill('Updated race');
+  await page.locator('#nu-form button[type=submit]').click();
+  await expect(page.locator('#nu-form')).toBeHidden();
+  const after = gh.json('next-up/schedule.json').items;
+  expect(after).toContainEqual({ ...target, title: 'Updated race' });
+  for (const other of before.slice(2)) expect(after).toContainEqual(other);
 });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 test.beforeEach(async ({ page }) => {
   // Keep checks deterministic and prevent requests to external services.
@@ -59,12 +60,15 @@ test('gear outage leaves social links and game available', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Stop the trail game' })).toBeVisible();
 });
 
-test('shipped gear list renders the headlamp and is valid', async ({ page }) => {
+test('shipped gear list renders the current visible catalog', async ({ page }) => {
+  const products = JSON.parse(readFileSync('gear/products.json', 'utf8')).products.filter(p => p.visible !== false);
   await page.goto('/');
-  const card = page.locator('.gear-card');
-  await expect(card).toHaveCount(1);
-  await expect(card).toHaveAttribute('href', 'https://rendezvu.co/p-44886709?h=tristan-blain');
-  await expect(card).toContainText('Fenix HM55R');
+  const cards = page.locator('.gear-card');
+  await expect(cards).toHaveCount(products.length);
+  for (const [i, product] of products.entries()) {
+    await expect(cards.nth(i)).toHaveAttribute('href', product.url);
+    await expect(cards.nth(i)).toContainText(product.name);
+  }
 });
 
 test('hidden products stay off the page and repo images load', async ({ page }) => {

@@ -25,6 +25,13 @@
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   }
   function clean(v) { return typeof v === 'string' ? v.trim() : ''; }
+  // Keep the actual entry while a form is open; list positions can change.
+  function editIndex(items, target) {
+    if (target === null) return null;
+    var i = items.indexOf(target);
+    if (i < 0) { var e = new Error(); e.userMessage = 'This entry changed or was deleted. Reopen it before saving.'; throw e; }
+    return i;
+  }
 
   // ---------- GitHub ----------
   function gh(path, options) {
@@ -169,9 +176,10 @@
     var on = e.target.checked;
     task(function () { return save('nextup', Object.assign({}, data.nextup, { enabled: on }), on ? 'Next up: show card' : 'Next up: hide card'); });
   });
-  var nuForm = $('nu-form');
+  var nuForm = $('nu-form'), editedRace = null;
   function openRace(i) {
     nuForm.reset(); var f = nuForm.elements, item = i == null ? {} : data.nextup.items[i];
+    editedRace = i == null ? null : item;
     f.index.value = i == null ? '' : i;
     ['title', 'label', 'description', 'date', 'link', 'showFrom', 'showUntil', 'note'].forEach(function (k) { f[k].value = item[k] || ''; });
     f.on.checked = !item.off;
@@ -190,8 +198,8 @@
       : item.showFrom && item.showUntil && item.showFrom > item.showUntil ? '"Start showing" has to be on or before "Last day".'
       : !NU.normalize(Object.assign({}, item, { off: false })) ? 'Something in this one isn\'t valid. Check the dates and link.' : '';
     if (problem) { notice(problem, true); return; }
-    var i = f.index.value === '' ? null : +f.index.value;
     task(function () {
+      var i = editIndex(data.nextup.items, editedRace);
       var items = data.nextup.items.slice(); if (i == null) items.push(item); else items[i] = item;
       return save('nextup', withItems(items), 'Next up: ' + (i == null ? 'add ' : 'update ') + item.title).then(function () { nuForm.hidden = true; });
     });
@@ -236,10 +244,11 @@
     if (!confirm('Delete "' + p.name + '"?')) return;
     task(function () { var products = data.gear.products.slice(); products.splice(i, 1); return save('gear', withProducts(products), 'Gear: remove ' + p.name); });
   }
-  var gearForm = $('gear-form'), pendingImage = null;
+  var gearForm = $('gear-form'), pendingImage = null, editedGear = null;
   function preview(src) { var box = $('gear-preview'); box.hidden = !src; box.querySelector('img').src = src || ''; }
   function openGear(i) {
     gearForm.reset(); pendingImage = null; var f = gearForm.elements, p = i == null ? {} : data.gear.products[i];
+    editedGear = i == null ? null : p;
     f.index.value = i == null ? '' : i;
     ['name', 'brand', 'url', 'note', 'image'].forEach(function (k) { f[k].value = p[k] || ''; });
     f.visible.checked = p.visible !== false;
@@ -269,14 +278,15 @@
   });
   function slug(text) { return (text || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'product'; }
   gearForm.addEventListener('submit', function (e) {
-    e.preventDefault(); var f = gearForm.elements, i = f.index.value === '' ? null : +f.index.value;
-    var old = i == null ? {} : data.gear.products[i];
+    e.preventDefault(); var f = gearForm.elements;
+    var old = editedGear || {};
     var p = { id: old.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())), name: clean(f.name.value), brand: clean(f.brand.value),
       note: clean(f.note.value), url: clean(f.url.value), image: clean(f.image.value), visible: f.visible.checked };
     var problem = !p.name ? 'Give it a name.' : !httpsOk(p.url) ? 'The affiliate link has to start with https://.'
       : p.image && !httpsOk(p.image) && !repoImage(p.image) ? 'The image link has to start with https://.' : '';
     if (problem) { notice(problem, true); return; }
     task(function () {
+      var i = editIndex(data.gear.products, editedGear);
       var upload = Promise.resolve();
       if (pendingImage) {
         var path = 'gear/images/' + slug(p.name) + '-' + Math.random().toString(36).slice(2, 8) + '.webp';
