@@ -218,9 +218,16 @@ function makeDog(imgs, parts, opt){
   var CYCLE=1.05, SCALE=0.105, dpr=1, gw=0, gh=0, rw=0, rh=0, off=0, ph=0.1, last=0, on=true, pp=null;
   var names=['head','torso','shorts','thigh','shin','shoe','upperarm','forearm','forearm_far'],imgs={},left=names.length;
   // One independent choice per document load; never saved in localStorage.
-  var outfits=['race','trail','winter'],outfit=outfits[Math.floor(Math.random()*outfits.length)];
+  // 'hd' is the original outfit redrawn sharper (inmotion-video handoff A1); it replaces every piece, so it needs no fitting.
+  var outfits=['race','trail','winter','hd'],outfit=outfits[Math.floor(Math.random()*outfits.length)];
   function outfitImages(){
     var originals=imgs;
+    if(outfit==='hd')return Promise.all(names.map(function(n){return new Promise(function(resolve,reject){
+      var im=new Image();im.onload=function(){resolve([n,im])};im.onerror=function(){reject(new Error('HD image failed'))};
+      im.src='scene/outfits/hd/'+n+'.webp?v=1';
+    })})).then(function(entries){
+      var artwork={};entries.forEach(function(e){artwork[e[0]]=e[1]});imgs=artwork;box.dataset.runnerOutfit='hd';
+    }).catch(function(){imgs=originals;box.dataset.runnerOutfit='original'});
     if(typeof window.fitRiverOutfit!=='function'){box.dataset.runnerOutfit='original';return Promise.resolve()}
     var required=names.filter(function(n){return n!=='head'&&(outfit==='winter'||n!=='forearm'&&n!=='forearm_far')});
     return Promise.all(required.map(function(n){return new Promise(function(resolve,reject){
