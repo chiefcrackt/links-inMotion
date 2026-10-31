@@ -369,7 +369,7 @@ function makeDog(imgs, parts, opt){
   function loadTravis(){var tn=names.concat(['pbj-0','pbj-1','pbj-2','pbj-3']),ti={},tl=tn.length;
     tn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--tl===0&&tn.every(function(k){return ti[k].naturalWidth>0})){
         timg=ti;tv=makePuppet(ti,PARTS,{imgScale:0.3,walk:true});if(aidBtn&&!(G&&!G.over))aidBtn.hidden=false}};
-      i.src='scene/travis/'+n+'.webp?v=2';ti[n]=i})}
+      i.src='scene/travis/'+n+'.webp?v=3';ti[n]=i})}
   // ---- Trail mini-game: roots and rocks scroll in on the floor; tap to jump them. One clip ends the run.
   var SPD=1, st=-1;                    // world speed multiplier (drops during a stumble), stumble timer
   var GS=1, gsGoal=1, mile=0, signs=[], burst=-1, pumpT=-1;   // game speed (builds every 5 clears), mile markers, celebration timers
