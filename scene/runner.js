@@ -117,12 +117,12 @@ function makePuppet(imgs, parts, opt){
 var DOGPARTS={
  torso:{s:1.035,pivot:[5,45],at:[35,208]},
  head:{s:0.86,pivot:[110,300],at:[478,264]},
- fu:{s:1,pivot:[66.3,41],end:[59,202.6],at:[408,262]},
- fl:{s:1,pivot:[54.1,54.5],end:[57.7,241.5]},
- fp:{s:1,pivot:[24.2,22.4],end:[51.7,79]},
- hu:{s:1,pivot:[70.5,41.1],end:[65.4,195.1],at:[118,262+38]},   // +38: hip sits a little lower on the flat torso (A9)
- hl:{s:1,pivot:[47.2,48.3],end:[42.4,172.7]},
- hp:{s:1,pivot:[41.6,37.8],end:[84.6,162.4]}
+ fu:{s:1,pivot:[65.6,40.3],end:[58.3,201.9],at:[408,262]},
+ fl:{s:1,pivot:[52.6,53],end:[56.1,240]},
+ fp:{s:1,pivot:[23.2,21.9],end:[50.7,78.5]},
+ hu:{s:1,pivot:[69.2,39.8],end:[64.1,193.9],at:[118,262+38]},   // +38: hip sits a little lower on the flat torso (A9)
+ hl:{s:1,pivot:[46.5,46.8],end:[41.7,171.2]},
+ hp:{s:1,pivot:[40.3,37.2],end:[83.3,161.7]}
 };
 /* Hooper: paw-driven rotary gallop. Three-bone legs fold at elbows and hocks;
    stance paws sweep backward at ground speed, with a smooth airborne recovery.
@@ -491,7 +491,7 @@ function makeDog(imgs, parts, opt){
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
     dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
-      i.src='scene/hooper/'+n+'.webp?v=7';di[n]=i})}
+      i.src='scene/hooper/'+n+'.webp?v=8';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)outfitImages().then(start)};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
