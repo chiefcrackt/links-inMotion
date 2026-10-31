@@ -1,6 +1,6 @@
 # links-inMotion
 
-Personal link page for tristan.inmotion at https://in-motion.run, with an animated runner, Hooper, a trail mini-game, optional music, social links, and a managed gear carousel.
+Personal link page for tristan.inmotion at https://in-motion.run, with an animated runner, Hooper, an aid station with Travis, a trail mini-game, optional music, social links, and a managed gear carousel.
 
 ## Local setup
 
@@ -18,6 +18,7 @@ Open http://127.0.0.1:4187. It serves the same static files GitHub Pages does. T
 - `index.html`: public page, styles, social destinations, sharing metadata, and audio controls.
 - `next-up/`: the "Next up" card and its schedule (`schedule.json`).
 - `scene/`: runner/game logic, character images, and scenery.
+- `scene/travis/`: Travis and the PB&J for the Aid station button, built from the inmotion-video art (handoff A8, `shared/characters/travis/build.py`).
 - `audio/`: optional background music.
 - `gear/`: gear carousel, its product list (`products.json`), and uploaded photos.
 - `admin/`: the editor for gear and Next up.
@@ -50,7 +51,13 @@ npx playwright install chromium
 npm test
 ```
 
-Browser checks start and stop their own preview on port 4187; stop a manually running preview first. They run on desktop and mobile sizes and cover the social links, sharing metadata, the game/Hooper/sound controls, the gear carousel, the Next up schedule, and the editor. External requests are blocked and GitHub is faked, so tests never change the real repo.
+Browser checks start and stop their own preview on port 4187; stop a manually running preview first. They run on desktop and mobile sizes and cover the social links, sharing metadata, the game/Hooper/aid station/sound controls, the gear carousel, the Next up schedule, and the editor. External requests are blocked and GitHub is faked, so tests never change the real repo.
+
+The scene also has standalone checks that use the preview on port 4187 (start it with `npm run preview` first): `node tests/aid-station.cjs`, `node tests/runner-outfits.cjs`, `node tests/hooper-gait.cjs`.
+
+## Aid station
+
+The **Aid station** button plays a short scene: Tristan stops, Travis walks in from the right with a PB&J, hands it over, Tristan eats it in four bites, they wave, Travis walks back off to the right, and Tristan runs on. Hooper heads off up the trail when it starts, and the other scene buttons wait until it's over. The trail game hides the button. With reduced motion it shows a still of the handoff for a few seconds instead.
 
 ## Deployment
 

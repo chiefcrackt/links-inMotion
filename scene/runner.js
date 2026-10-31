@@ -27,27 +27,31 @@ function makePuppet(imgs, parts, opt){
   function rot(v,a){var c=Math.cos(a*R),s=Math.sin(a*R);return [v[0]*c-v[1]*s,v[0]*s+v[1]*c]}
   function bone(n){var p=parts[n];return {rest:ang(sub(p.end,p.pivot)),len:len(sub(p.end,p.pivot))}}
   var TH=bone('thigh'),SN=bone('shin'),UA=bone('upperarm'),FA=bone('forearm');
-  var SHOE_SCALE=opt.shoeScale||0.85, LEAN=opt.lean||6;
+  var WALK=!!opt.walk;   // walking gait (Travis): feet stay planted in turn, no flight phase
+  var SHOE_SCALE=opt.shoeScale||0.85, LEAN=opt.lean||(WALK?2:6);
   var FAR_SH=opt.farShoulder||[10,4], FAR_HIP=opt.farHip||[10,-6];
-  var HIP =[ 28,  14,   0, -20, -27, -12,  18,  38];
-  var KNEE=[ 12,  38,  22,  10,  42, 100, 106,  72];
-  var PF  =[  4, -24, -22,  10,  28,  18,   2, -18];   // ankle: + = toes pointed, - = toes pulled up
-  var ARM =[-44, -34, -12,  14,  28,  20,   0, -26];
-  var ELB =[ 80,  82,  86,  92,  96,  92,  86,  82];
+  var HIP =WALK?[ 22,  16,   6,  -6, -16, -20,  -2,  18]:[ 28,  14,   0, -20, -27, -12,  18,  38];
+  var KNEE=WALK?[  4,  14,   8,   4,  10,  40,  58,  22]:[ 12,  38,  22,  10,  42, 100, 106,  72];
+  var PF  =WALK?[-10,   0,   4,   8,  22,  18,  -6, -14]:[  4, -24, -22,  10,  28,  18,   2, -18];   // ankle: + = toes pointed, - = toes pulled up
+  var ARM =WALK?[-16, -10,  -2,   8,  16,  10,   0, -10]:[-44, -34, -12,  14,  28,  20,   0, -26];
+  var ELB =WALK?[ 16,  16,  18,  20,  22,  20,  18,  16]:[ 80,  82,  86,  92,  96,  92,  86,  82];
   function cr(k,p){var n=k.length,x=((p%1)+1)%1*n,i=Math.floor(x),t=x-i,a=k[(i-1+n)%n],b=k[i%n],c=k[(i+1)%n],d=k[(i+2)%n];
     return 0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)}
   function pt(o,l,a){return [o[0]+l*Math.sin(a*R),o[1]+l*Math.cos(a*R)]}
   var sole=parts.shoe.sole.map(function(q){return [q[0]*SHOE_SCALE,q[1]*SHOE_SCALE]});
   // Jump state, set by the scene: tuck (0..1 knees up in the air), crouch (0..1 bent knees on the ground),
   // lift (source px above the ground), w (0..1 how much the jump overrides the stride's own hip height).
-  var J={tuck:0,crouch:0,lift:0,w:0,pump:0};
+  // stand (0..1) blends to a relaxed standing pose with both feet down; arm {sw,el,w} poses the near arm
+  // (reach, eat, wave), w = how much it overrides the swing.
+  var J={tuck:0,crouch:0,lift:0,w:0,pump:0,stand:0,arm:null};
   function mixv(a,b,t){return a+(b-a)*t}
   function leg(p,h){var hip=cr(HIP,p),kn=cr(KNEE,p),pf=cr(PF,p);
     if(J.tuck>0){var T=Math.PI*2;hip=mixv(hip,40+10*Math.cos(T*p),J.tuck);kn=mixv(kn,108,J.tuck);pf=mixv(pf,32,J.tuck)}
     if(J.crouch>0){hip+=14*J.crouch;kn+=34*J.crouch}
+    if(J.stand>0){hip=mixv(hip,2,J.stand);kn=mixv(kn,4,J.stand);pf=mixv(pf,0,J.stand)}
     var shin=hip-kn,foot=-shin+pf,k=pt(h,TH.len,hip),an=pt(k,SN.len,shin),low=-1e9;
     sole.forEach(function(q){var r=rot(q,foot);low=Math.max(low,an[1]+r[1])});return {hip:hip,shin:shin,foot:foot,k:k,an:an,low:low}}
-  function lift(p){var u=((p%0.5)+0.5)%0.5;return u>0.34&&u<0.5?22*Math.sin(Math.PI*(u-0.34)/0.16):0}
+  function lift(p){if(WALK)return 0;var u=((p%0.5)+0.5)%0.5;return u>0.34&&u<0.5?22*Math.sin(Math.PI*(u-0.34)/0.16):0}
   var N=240,ys=[];for(var i=0;i<N;i++){var p=i/N,a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP);ys.push(-Math.max(a.low,b.low)-lift(p))}
   function hipY(p){var x=((p%1)+1)%1*N,i=Math.floor(x),t=x-i;return ys[i%N]*(1-t)+ys[(i+1)%N]*t}
   var groundSpeed=(leg(0.06,[0,0]).an[0]-leg(0.31,[0,0]).an[0])/0.25;
@@ -64,22 +68,26 @@ function makePuppet(imgs, parts, opt){
     if(J.tuck>0){sw=mixv(sw,shade?-20:58,J.tuck);el=mixv(el,shade?70:104,J.tuck)}   // drive the near arm up, far arm back
     if(J.crouch>0){sw=mixv(sw,-30,J.crouch*0.7)}                                        // arms swing back to load
     if(J.pump>0&&!shade){sw=mixv(sw,148,J.pump);el=mixv(el,30,J.pump)}                   // milestone fist pump
+    if(J.stand>0){sw=mixv(sw,shade?4:-4,J.stand);el=mixv(el,14,J.stand)}                // arms hang at rest
+    if(J.arm&&J.arm.w>0&&!shade){sw=mixv(sw,J.arm.sw,J.arm.w);el=mixv(el,J.arm.el,J.arm.w)}
     var fo=sw+el,e=pt(sh,UA.len,sw);
-    piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade)}
+    piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade);
+    return pt(e,FA.len*0.93,fo)}   // the fist
   // Core motion. q = step phase (two steps per cycle). Landing is near q=0.25 (the "down" pose).
-  function core(p){var T=Math.PI*2,q=p*2;
+  function core(p){var T=Math.PI*2,q=p*2,m=1-0.9*J.stand;   // standing calms the stride motion
     return {
-      pelvisTilt: 2.2*Math.sin(T*(q-0.05)),          // pelvis rocks a little with each step
-      pelvisShift: 4*Math.cos(T*p),                   // near hip swings forward and back with the near leg
-      torsoLean: LEAN+2.4*Math.sin(T*(q-0.2))+12*J.crouch,  // leans in a bit more on push-off (and when crouching to jump)
-      squash: 1-0.018*Math.max(0,Math.cos(T*(q-0.25))),// tiny compress on landing
-      shoulderTwist: 7*Math.sin(T*(p+0.25)),          // shoulders rotate against the hips
+      pelvisTilt: m*2.2*Math.sin(T*(q-0.05)),          // pelvis rocks a little with each step
+      pelvisShift: m*4*Math.cos(T*p),                   // near hip swings forward and back with the near leg
+      torsoLean: mixv(LEAN+2.4*Math.sin(T*(q-0.2))+12*J.crouch,1.5,J.stand),  // leans in a bit more on push-off (and when crouching to jump)
+      squash: 1-m*0.018*Math.max(0,Math.cos(T*(q-0.25))),// tiny compress on landing
+      shoulderTwist: m*7*Math.sin(T*(p+0.25)),          // shoulders rotate against the hips
       headCounter: -0.75                              // head undoes most of the torso rock
     }}
-  function draw(ctx,p,x,groundY,scale){
-    ctx.save();ctx.translate(x,groundY);ctx.scale(scale,scale);
-    var c=core(p),hy=hipY(p);
-    if(J.w>0){var a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP),ground=-Math.max(a.low,b.low);hy=mixv(hy,ground,J.w)-J.lift}
+  // flip: draw facing left (the rig faces right). Returns the near fist in canvas coordinates.
+  function draw(ctx,p,x,groundY,scale,flip){
+    ctx.save();ctx.translate(x,groundY);ctx.scale(flip?-scale:scale,scale);
+    var c=core(p),hy=hipY(p),gw=Math.max(J.w,J.stand);
+    if(gw>0){var a=leg(p,[0,0]),b=leg(p+0.5,FAR_HIP),ground=-Math.max(a.low,b.low);hy=mixv(hy,ground,gw)-J.lift}
     var h=[0,hy];
     // chain: hip -> waist (on the shorts) -> neck/shoulder (on the torso)
     var w=rot(parts.shorts.waist,c.pelvisTilt),waist=[h[0]+w[0],h[1]+w[1]];
@@ -95,8 +103,9 @@ function makePuppet(imgs, parts, opt){
     piece(ctx,'shorts',h,c.pelvisTilt);
     piece(ctx,'head',neck,LEAN*0.3+(tA-LEAN)*(1+c.headCounter));
     ctx.save();ctx.translate(waist[0],waist[1]);ctx.rotate(tA*R);ctx.scale(1/K,c.squash/K);ctx.drawImage(imgs.torso,-parts.torso.pivot[0]*K,-parts.torso.pivot[1]*K);ctx.restore();
-    drawArm(ctx,sh,p,false);
-    ctx.restore()}
+    var fist=drawArm(ctx,sh,p,false);
+    ctx.restore();
+    return {fist:[x+(flip?-scale:scale)*fist[0],groundY+scale*fist[1]]}}
   return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
 }
 
@@ -245,7 +254,7 @@ function makeDog(imgs, parts, opt){
   function labelSwap(){if(swap)swap.setAttribute('aria-label','Change outfit (now: '+OUTFIT_NAMES[box.dataset.runnerOutfit]+')')}
   // Outfit button: switch to the next look in place; he keeps running. A look that fails is skipped.
   function nextOutfit(){
-    if(changing||!pp)return;
+    if(changing||!pp||aid)return;
     var id=outfits[(outfits.indexOf(outfit)+1)%outfits.length];
     changing=true;if(swap)swap.disabled=true;outfit=id;
     lookFor(id).then(function(set){imgs=set;box.dataset.runnerOutfit=id;pp=makePuppet(imgs,PARTS,{imgScale:0.3});drawRunner();labelSwap()})
@@ -289,11 +298,11 @@ function makeDog(imgs, parts, opt){
     if(prev<jA1&&t>=jA1)ripples.push({x:rw/2+4,t:0,big:true});
     if(t>=jA2){jt=-1;J.tuck=J.crouch=J.lift=J.w=0}}
   function wake(){if(!on){on=true;last=0;requestAnimationFrame(frame)}}
-  function jump(){if(G&&!G.over)hideHint();if(!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
+  function jump(){if(G&&!G.over)hideHint();if(aid||!pp||(jt>=0&&jt<jA1+0.06)||st>=0)return;var game=G&&!G.over;jH=game?540:330;jA1=game?0.78:0.64;jA2=jA1+0.31;jt=0;if(hd)hd.hop=-0.14;wake()}   // Hooper hops a beat after Tristan
   // Hooper: trots in from the left, runs alongside, then dashes off ahead. null when he's not out.
   var dog=null,hd=null,DSCALE=0.074,STAY=10,HOP=172;   // HOP: hop height in source px
   function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
-  function hooper(){if(!dog)return;
+  function hooper(){if(!dog||aid)return;
     if(!hd){hd={mode:'in',t:0,p:0,x:-60,hop:-1};setPaw(true)}
     else if(hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}
     wake()}
@@ -309,6 +318,58 @@ function makeDog(imgs, parts, opt){
     if(hd.hop>0){var u=hd.hop/0.5;lift=HOP*4*u*(1-u);air=lift/HOP}
     ctx.fillStyle='rgba(0,0,0,'+(0.38*(1-0.5*air)).toFixed(3)+')';ctx.beginPath();ctx.ellipse(hd.x+20,gy,22*(1-0.4*air),3*(1-0.4*air),0,0,Math.PI*2);ctx.fill();
     dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
+
+  // ---- Aid station: Tristan stops, Travis walks in from the right with a PB&J, Tristan eats it,
+  // they wave, Travis walks back off to the right, and Tristan runs on. null when it isn't playing.
+  var tv=null,timg={},aid=null,RUNK=1,WC=1.15,GAP=680;   // Travis puppet, sandwich images, run speed 0..1, walk cycle (s), hip-to-hip gap (source px)
+  var REACH={sw:64,el:12},HOLD={sw:22,el:74},EAT={sw:62,el:120},REST={sw:-4,el:14};
+  function lerpPose(a,b,k){return {sw:a.sw+(b.sw-a.sw)*k,el:a.el+(b.el-a.el)*k,w:1}}
+  function aidStation(){if(!tv||!pp||aid||(G&&!G.over)||jt>=0||st>=0)return;
+    if(hd&&hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}   // Hooper heads off up the trail
+    aid={step:'stop',t:0,s:0,tx:rw+50,tp:0.3,face:-1,bite:0,xfer:0,crumbs:[]};
+    setAidUi(true);
+    if(still){aidStill();return}
+    wake()}
+  function setAidUi(onn){box.classList.toggle('aiding',onn);if(aidBtn){aidBtn.disabled=onn;aidBtn.setAttribute('aria-pressed',onn?'true':'false')}
+    [paw,swap,playBtn].forEach(function(b){if(b)b.disabled=onn})}
+  function aidStill(){   // reduced motion: one still of the handoff, then back to normal
+    var A=aid;A.step='still';A.tx=rw/2-6+GAP*SCALE;A.xfer=0.5;
+    pp.jump.stand=1;pp.jump.arm={sw:REACH.sw,el:REACH.el,w:1};tv.jump.stand=1;tv.jump.arm={sw:REACH.sw,el:REACH.el,w:1};
+    RUNK=0;drawRunner();
+    setTimeout(function(){aidEnd();drawRunner()},4500)}
+  function aidEnd(){aid=null;RUNK=1;pp.jump.stand=0;pp.jump.arm=null;if(tv){tv.jump.stand=0;tv.jump.arm=null}setAidUi(false)}
+  function walkTravis(dt,dir){var A=aid;A.tx+=dir*tv.groundSpeed*SCALE/WC*dt;A.tp=(A.tp+dt/WC)%1}
+  function crumbs(at){for(var i=0;i<6;i++)aid.crumbs.push({x:at[0]+(Math.random()-0.3)*4,y:at[1]+Math.random()*2,vx:(Math.random()-0.2)*28,vy:-14-Math.random()*16,t:0,c:i%2?'#D9A15A':'#F3E3C0'})}
+  function updateAid(dt,gy,fist){if(!aid||aid.step==='still')return;var A=aid,P=pp.jump,T=tv.jump;A.t+=dt;A.s+=dt;var s=A.s;
+    var target=rw/2-6+GAP*SCALE;
+    if(A.step==='stop'){RUNK=1-sm(0,1.1,s);P.stand=sm(0.4,1.2,s);
+      if(s>0.5){T.stand=0;walkTravis(dt,-1);if(A.tx<=target){A.tx=target;A.step='give';A.s=0}}}
+    else if(A.step==='give'){RUNK=0;P.stand=1;T.stand=sm(0,0.45,s);
+      T.arm={sw:REACH.sw,el:REACH.el,w:sm(0.2,0.75,s)*(1-sm(1.4,1.9,s))};
+      P.arm=s<1.3?{sw:REACH.sw,el:REACH.el,w:sm(0.55,1,s)}:lerpPose(REACH,HOLD,sm(1.3,1.8,s));
+      A.xfer=sm(1.0,1.3,s);if(s>=1.9){A.step='eat';A.s=0}}
+    else if(A.step==='eat'){var k=Math.floor(s),u=s-k;
+      if(k>=4){P.arm=null;A.step='wave';A.s=0}
+      else{P.arm=u<0.4?lerpPose(HOLD,EAT,sm(0,0.4,u)):u<0.6?lerpPose(EAT,EAT,1):k<3?lerpPose(EAT,HOLD,sm(0.6,1,u)):lerpPose(EAT,REST,sm(0.6,1,u));
+        if(A.bite===k&&u>=0.45){A.bite=k+1;if(fist)crumbs(fist)}}}
+    else if(A.step==='wave'){var w=sm(0,0.3,s)*(1-sm(1.4,1.7,s));
+      T.arm={sw:150,el:30+24*Math.sin(s*10),w:w};P.arm={sw:150,el:30+24*Math.sin(s*10+1.2),w:w*sm(0.2,0.5,s)};
+      if(s>=1.8){T.arm=P.arm=null;A.face=1;A.step='leave';A.s=0}}
+    else if(A.step==='leave'){T.stand=1-sm(0,0.3,s);walkTravis(dt,1);if(A.tx>rw+60){A.step='go';A.s=0}}
+    else if(A.step==='go'){P.stand=1-sm(0,0.6,s);RUNK=sm(0.1,1.2,s);if(s>=1.2){aidEnd();return}}
+    for(var i=A.crumbs.length-1;i>=0;i--){var c=A.crumbs[i];c.t+=dt;c.vy+=90*dt;c.x+=c.vx*dt;c.y=Math.min(gy,c.y+c.vy*dt);if(c.t>1.4)A.crumbs.splice(i,1)}}
+  function drawAid(ctx,gy,fist){if(!aid||!tv)return null;var A=aid,flip=A.face<0;
+    var tr=tv.draw(ctx,A.tp,A.tx,gy,SCALE,flip);
+    if(A.bite<4){var img=timg['pbj-'+A.bite],from=tr.fist,to=fist||from,k=A.step==='give'||A.step==='still'?A.xfer:1,
+        x=from[0]+(to[0]-from[0])*k,y=from[1]+(to[1]-from[1])*k,w=img.naturalWidth/72*140*SCALE,h=w*img.naturalHeight/img.naturalWidth;
+      ctx.drawImage(img,x-w*0.5,y-h*0.62,w,h)}
+    return tr}
+  function drawAidShadow(ctx,gy){if(!aid)return;ctx.fillStyle='rgba(0,0,0,.42)';ctx.beginPath();ctx.ellipse(aid.tx+12*aid.face,gy,26,3.5,0,0,Math.PI*2);ctx.fill()}
+  function drawCrumbs(ctx){if(!aid)return;aid.crumbs.forEach(function(c){ctx.globalAlpha=Math.max(0,1-c.t/1.4);ctx.fillStyle=c.c;ctx.fillRect(c.x-0.8,c.y-0.8,1.6,1.6)});ctx.globalAlpha=1}
+  function loadTravis(){var tn=names.concat(['pbj-0','pbj-1','pbj-2','pbj-3']),ti={},tl=tn.length;
+    tn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--tl===0&&tn.every(function(k){return ti[k].naturalWidth>0})){
+        timg=ti;tv=makePuppet(ti,PARTS,{imgScale:0.3,walk:true});if(aidBtn&&!(G&&!G.over))aidBtn.hidden=false}};
+      i.src='scene/travis/'+n+'.webp?v=1';ti[n]=i})}
   // ---- Trail mini-game: roots and rocks scroll in on the floor; tap to jump them. One clip ends the run.
   var SPD=1, st=-1;                    // world speed multiplier (drops during a stumble), stumble timer
   var GS=1, gsGoal=1, mile=0, signs=[], burst=-1, pumpT=-1;   // game speed (builds every 5 clears), mile markers, celebration timers
@@ -322,19 +383,19 @@ function makeDog(imgs, parts, opt){
   try{best=+localStorage.getItem('tim_trail_best')||0}catch(e){}
   if(hud){hS=hud.querySelector('.hs');hB=hud.querySelector('.hb');hMsg=hud.querySelector('.hm')}
   function showHud(){if(!hud)return;hS.textContent=G?G.streak:0;hB.textContent=best}
-  function play(){if(!pp)return;
+  function play(){if(!pp||aid)return;
     if(G&&!G.over){endGame(false);return}                     // Stop
     G={obs:[],streak:0,gap:260,since:0,over:false};st=-1;SPD=1;gsGoal=1;mile=0;signs=[];
     if(hint){hint.hidden=false;hint.classList.remove('gone');hintT=0}
     if(hd&&hd.mode!=='out'){hd.mode='out';hd.t=0;hd.x0=hd.x;setPaw(false)}   // Hooper sits this one out
-    if(paw)paw.hidden=true;if(hud){hud.hidden=false;hud.classList.remove('over');hMsg.textContent=''}
+    if(paw)paw.hidden=true;if(aidBtn)aidBtn.hidden=true;if(hud){hud.hidden=false;hud.classList.remove('over');hMsg.textContent=''}
     if(playBtn){playBtn.querySelector('span').textContent='Stop';playBtn.querySelector('path').setAttribute('d','M4 4 H12 V12 H4 Z');playBtn.setAttribute('aria-label','Stop the trail game')}
     showHud();wake()}
   function endGame(clipped){if(!G)return;G.over=true;gsGoal=1;hideHint();
     if(G.streak>best){best=G.streak;try{localStorage.setItem('tim_trail_best',String(best))}catch(e){}}
     showHud();if(hud){hud.classList.add('over');hMsg.textContent=clipped?'Clipped it. Play to run again.':'Run ended.'}
     if(playBtn){playBtn.querySelector('span').textContent='Play';playBtn.querySelector('path').setAttribute('d','M4 2.5 L13 8 L4 13.5 Z');playBtn.setAttribute('aria-label','Play the trail game')}
-    if(paw&&dog)paw.hidden=false}
+    if(paw&&dog)paw.hidden=false;if(aidBtn&&tv)aidBtn.hidden=false}
   function spawn(){var rock=Math.random()<0.5;
     G.obs.push(rock?{k:'rock',x:rw+10,w:15+Math.random()*4,h:13+Math.random()*4,s:Math.random()}
                    :{k:'root',x:rw+10,w:22+Math.random()*5,h:9+Math.random()*2,s:Math.random()});
@@ -391,34 +452,39 @@ function makeDog(imgs, parts, opt){
         ctx.beginPath();ctx.moveTo(x,gy+1);ctx.quadraticCurveTo(x+w*0.45,gy-h*1.45,x+w,gy+1);ctx.stroke();
         ctx.strokeStyle=o.hit?'#A0687A':'#7E5534';ctx.lineWidth=h*0.32;ctx.beginPath();ctx.moveTo(x+w*0.55,gy-h*0.55);ctx.quadraticCurveTo(x+w*0.75,gy-h*0.2,x+w*0.82,gy+1);ctx.stroke();
         ctx.strokeStyle='rgba(242,213,122,.95)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.5);ctx.quadraticCurveTo(x+w*0.4,gy-h*1.2,x+w*0.62,gy-h*0.7);ctx.stroke()}})}
+  var lastFist=null;
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
     var air=Math.min(1,pp.jump.lift/HEIGHT),sw=1-0.45*air;   // shadow shrinks and fades while he's in the air
     rctx.fillStyle='rgba(0,0,0,'+(0.42*(1-0.5*air)).toFixed(3)+')';rctx.beginPath();rctx.ellipse(rw/2+6,gy,26*sw,3.5*sw,0,0,Math.PI*2);rctx.fill();
+    drawAidShadow(rctx,gy);
     drawSigns(rctx,gy);
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD*GS);
     drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
-    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();drawDog(bctx,gy+1);
+    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}var me=pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();drawDog(bctx,gy+1);
+    if(aid){lastFist=me.fist;drawAid(bctx,gy,aid.step==='give'||aid.step==='eat'||aid.step==='still'?me.fist:null)}
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
     edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
     edge(-0.6,-1.1,'#2E9BAD',0.55);  // grid glow from below: teal along the underside
+    drawCrumbs(rctx);
     drawBurst(rctx,gy)}
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
-    if(pp){var prev=ph,jumping=jt>=0||st>=0,fs=pp.groundSpeed*SCALE/CYCLE;ph=(ph+dt*SPD*GS/CYCLE)%1;off+=fs*SPD*GS*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);updateExtras(dt,fs);
+    if(pp){var prev=ph,jumping=jt>=0||st>=0||RUNK<0.6,fs=pp.groundSpeed*SCALE/CYCLE*RUNK;ph=(ph+dt*SPD*GS*RUNK/CYCLE)%1;off+=fs*SPD*GS*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);updateExtras(dt,fs);updateAid(dt,rh-5,lastFist);
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
     drawGrid();drawRunner(dt);
     if(still&&jt<0&&!hd&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
     requestAnimationFrame(frame)}
-  var btn=box.querySelector('.jump'),paw=box.querySelector('.paw'),swap=box.querySelector('.outfit');
+  var btn=box.querySelector('.jump'),paw=box.querySelector('.paw'),swap=box.querySelector('.outfit'),aidBtn=box.querySelector('.aid');
+  if(aidBtn)aidBtn.addEventListener('click',function(e){e.stopPropagation();aidStation()});
   if(paw)paw.addEventListener('click',function(e){e.stopPropagation();hooper()});
   if(btn)btn.addEventListener('click',function(e){e.stopPropagation();jump()});
   if(swap)swap.addEventListener('click',function(e){e.stopPropagation();nextOutfit()});
   if(playBtn)playBtn.addEventListener('click',function(e){e.stopPropagation();play()});
   box.addEventListener('click',function(e){if(!e.target.closest('a'))jump()});
   
-  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(swap){swap.hidden=false;labelSwap()}if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();if(still){on=false;return}
+  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(swap){swap.hidden=false;labelSwap()}if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();loadTravis();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
