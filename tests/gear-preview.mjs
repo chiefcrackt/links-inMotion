@@ -2,7 +2,7 @@
 import { createServer } from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve, extname } from 'node:path';
+import { resolve, extname, sep } from 'node:path';
 import { handle } from '../product-admin/backend.mjs';
 const database = new DatabaseSync(':memory:'); database.exec(readFileSync('product-admin/schema.sql', 'utf8'));
 class Statement {
@@ -13,7 +13,7 @@ class Statement {
 }
 const images = new Map(), root = process.cwd();
 const env = { SETUP_TOKEN: 'local-preview-setup', DB: { prepare: sql => new Statement(sql), batch: async statements => { database.exec('BEGIN'); try { const result = []; for (const statement of statements) result.push(await statement.run()); database.exec('COMMIT'); return result; } catch (error) { database.exec('ROLLBACK'); throw error; } } }, BUCKET: { put: async (key, bytes, options) => images.set(key, { body: bytes, ...options }), get: async key => images.get(key) } };
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg' };
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.json': 'application/json' };
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost:4187'); let response;
@@ -27,7 +27,7 @@ createServer(async (req, res) => {
       if (path === '/editor.css') path = '/product-admin/editor.css';
       if (path === '/') path = '/index.html';
       if (path === '/gear/config.js') response = new Response("window.GEAR_API_ORIGIN='http://localhost:4187';", { headers: { 'Content-Type': 'text/javascript' } });
-      else { const file = resolve(root, '.' + decodeURIComponent(path)); const publicFile = file.startsWith(root + String.fromCharCode(92)) && !path.includes('/.') && !path.endsWith('.mjs') && !path.endsWith('.sql');
+      else { const file = resolve(root, '.' + decodeURIComponent(path)); const publicFile = file.startsWith(root + sep) && !path.includes('/.') && !path.endsWith('.mjs') && !path.endsWith('.sql');
         response = publicFile && existsSync(file) ? new Response(readFileSync(file), { headers: { 'Content-Type': mime[extname(file)] || 'application/octet-stream' } }) : new Response('Not found', { status: 404 }); }
     }
     res.writeHead(response.status, Object.fromEntries(response.headers)); res.end(Buffer.from(await response.arrayBuffer()));

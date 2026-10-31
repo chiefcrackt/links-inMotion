@@ -16,6 +16,7 @@ Open http://127.0.0.1:4187. The preview serves the public page and an isolated g
 ## Repository layout
 
 - `index.html`: public page, styles, social destinations, sharing metadata, and audio controls.
+- `next-up/`: the "Next up" card. Edit `next-up/schedule.js` to change what it shows.
 - `scene/`: runner/game logic, character images, and scenery.
 - `audio/`: optional background music.
 - `gear/`: public gear carousel and production backend origin.
@@ -23,6 +24,19 @@ Open http://127.0.0.1:4187. The preview serves the public page and an isolated g
 - `product-admin/`: gear backend, editor, schema, import, and deployment documentation.
 - `tests/`: isolated API/import checks, local preview server, and public-page browser checks.
 - `CNAME`: custom domain for GitHub Pages.
+
+## Next up card
+
+The card between the running scene and the social links shows one thing coming up: a race, a video, or a challenge. Edit only `next-up/schedule.js`.
+
+- Add one entry per race or event. The page shows the soonest entry that is live today, so you can load several races at once and each takes over when the previous one expires.
+- An entry is live from `showFrom` (optional, default right away) through `showUntil` (optional, default the `date`). Both days are included, in the viewer's local time.
+- `date` adds the event day and a countdown (`14 Days`, `1 Day`, `Today`). Without a date there is no countdown, and the entry stays until it is removed or given a `showUntil`.
+- `label`, `description`, and `link` are optional. Links must start with `https://`. No link shows a plain card.
+- `off: true` pauses one entry. `enabled: false` hides the card entirely.
+- Entries with a typo'd date or a non-https link are skipped rather than shown wrong. If nothing is live, the card disappears with no gap.
+
+After editing, bump `?v=` on the `next-up/schedule.js` script tag in `index.html` so phones don't keep the old copy.
 
 ## Verification
 

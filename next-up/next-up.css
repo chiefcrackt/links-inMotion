@@ -1,0 +1,22 @@
+/* "Next up" card: same panel and brackets as the link rows, with a gold top edge and a countdown. */
+.nu[hidden]{display:none}
+.nu-card{position:relative;display:flex;align-items:stretch;gap:14px;padding:16px 18px 15px;text-decoration:none;color:var(--paper);
+  background:rgba(19,35,61,.9);border:1px solid rgba(46,155,173,.3);border-top:3px solid var(--gold);transition:border-color .15s,background .15s}
+.nu-card::before,.nu-card::after{content:"";position:absolute;width:18px;height:18px;border:0 solid var(--teal);transition:border-color .15s}
+.nu-card::before{left:-1px;top:-3px;border-top-width:3px;border-left-width:3px}
+.nu-card::after{right:-1px;bottom:-1px;border-bottom-width:3px;border-right-width:3px}
+a.nu-card:hover,a.nu-card:focus-visible{background:rgba(19,35,61,1);border-color:var(--teal);border-top-color:var(--gold);outline:none}
+a.nu-card:hover::before,a.nu-card:hover::after,a.nu-card:focus-visible::before,a.nu-card:focus-visible::after{border-color:var(--gold)}
+a.nu-card:focus-visible{box-shadow:0 0 0 2px var(--navy),0 0 0 4px var(--gold)}
+a.nu-card:hover .nu-title,a.nu-card:focus-visible .nu-title{text-shadow:-3px 0 var(--teal),3px 0 var(--gold)}
+.nu-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.nu-label{font-family:var(--display);font-weight:700;font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.nu-title{font-family:var(--display);font-weight:900;font-size:1.75rem;line-height:1;letter-spacing:.02em;text-transform:uppercase;overflow-wrap:anywhere}
+.nu-desc{color:var(--muted);font-size:.9rem;line-height:1.4;overflow-wrap:anywhere}
+.nu-date{margin-top:4px;font-family:var(--display);font-weight:700;font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal)}
+.nu-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:8px}
+.nu-count{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:6px 8px;border:1px solid rgba(232,201,106,.45);background:rgba(14,26,46,.6)}
+.nu-count b{font-family:var(--display);font-weight:900;font-size:1.7rem;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums;text-transform:uppercase}
+.nu-count span{font-family:var(--display);font-weight:700;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.nu-side .arrow{margin-left:0}
+@media (prefers-reduced-motion:reduce){.nu-card,.nu-card::before,.nu-card::after{transition:none}}
