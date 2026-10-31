@@ -109,19 +109,20 @@ function makePuppet(imgs, parts, opt){
   return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
 }
 
-/* Hooper's joints and rig (v3 parts sheet). Each piece has its own scale (s) to "dog units" = the sheet's standing dog in pixels,
+/* Hooper's joints and rig (flat A9 pieces; leg hinges sit at the centers of each piece's rounded ends,
+   bone lengths kept from the v3 sheet so the gallop is unchanged). Each piece has its own scale (s) to "dog units" = the sheet's standing dog in pixels,
    a pivot in its own pixels, and for limbs an end joint. Torso and head are placed where they sit on the standing dog;
    the hip is the body's origin. Legs have three bones each: front = shoulder, forearm, wrist+paw;
    hind = thigh, shank, hock+paw. The lower pieces were cut from the lengthened legs with round caps at the joint. */
 var DOGPARTS={
  torso:{s:1.035,pivot:[5,45],at:[35,208]},
  head:{s:0.86,pivot:[110,300],at:[478,264]},
- fu:{s:0.94,pivot:[58,40],end:[55,212],at:[408,262]},
- fl:{s:0.85,pivot:[38,26],end:[40,246]},
- fp:{s:0.85,pivot:[40,28],end:[64,98]},
- hu:{s:0.82,pivot:[72,44],end:[70,232],at:[118,262+38]},   // +38: hip sits a little lower on the flat torso (A9)
- hl:{s:1.02,pivot:[40,28],end:[37.5,150]},
- hp:{s:1.02,pivot:[37.5,28],end:[77,151]}
+ fu:{s:1,pivot:[66.3,41],end:[59,202.6],at:[408,262]},
+ fl:{s:1,pivot:[54.1,54.5],end:[57.7,241.5]},
+ fp:{s:1,pivot:[24.2,22.4],end:[51.7,79]},
+ hu:{s:1,pivot:[70.5,41.1],end:[65.4,195.1],at:[118,262+38]},   // +38: hip sits a little lower on the flat torso (A9)
+ hl:{s:1,pivot:[47.2,48.3],end:[42.4,172.7]},
+ hp:{s:1,pivot:[41.6,37.8],end:[84.6,162.4]}
 };
 /* Hooper: paw-driven rotary gallop. Three-bone legs fold at elbows and hocks;
    stance paws sweep backward at ground speed, with a smooth airborne recovery.
@@ -489,7 +490,7 @@ function makeDog(imgs, parts, opt){
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
     dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
-      i.src='scene/hooper/'+n+'.webp?v=6';di[n]=i})}
+      i.src='scene/hooper/'+n+'.webp?v=7';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)outfitImages().then(start)};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
