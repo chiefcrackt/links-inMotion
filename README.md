@@ -27,7 +27,7 @@ Open http://127.0.0.1:4187. The preview serves the public page and an isolated g
 
 ## Next up card
 
-The card between the running scene and the social links shows one thing coming up: a race, a video, or a challenge. Edit only `next-up/schedule.js`.
+The card at the bottom of the page, above the footer, shows one thing coming up: a race, a video, or a challenge. Edit only `next-up/schedule.js`.
 
 - Add one entry per race or event. The page shows the soonest entry that is live today, so you can load several races at once and each takes over when the previous one expires.
 - An entry is live from `showFrom` (optional, default right away) through `showUntil` (optional, default the `date`). Both days are included, in the viewer's local time.

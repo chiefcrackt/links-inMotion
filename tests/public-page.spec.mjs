@@ -88,12 +88,32 @@ test('next up shows the shipped race with countdown and link', async ({ page }) 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
-test('next up shows on race day and disappears the day after', async ({ page }) => {
+test('next up shows on race day and the next race takes over the day after', async ({ page }) => {
   await at(page, '2026-11-14');
   await page.goto('/');
   await expect(page.locator('.nu-count')).toHaveText('Today');
   await at(page, '2026-11-15');
   await page.reload();
+  await expect(page.locator('.nu-title')).toHaveText('Pittsburgh Marathon');
+  await at(page, '2027-05-03');
+  await page.reload();
+  await expect(page.locator('.nu-title')).toHaveText('Rabid Raccoon 100');
+  await at(page, '2027-06-06');
+  await page.reload();
+  await expect(page.locator('.nu-count')).toHaveText('Today');
+});
+
+test('every entry in the shipped schedule is valid', async ({ page }) => {
+  await page.goto('/');
+  const bad = await page.evaluate(() => window.NEXT_UP.items
+    .filter(item => !window.NextUpCard.normalize({ ...item, off: false }))
+    .map(item => item.title || '(no title)'));
+  expect(bad).toEqual([]);
+});
+
+test('next up hides with no gap when nothing is live', async ({ page }) => {
+  await page.route('**/next-up/schedule.js*', schedule({ enabled: true, items: [{ title: 'Past', date: '2026-01-01' }] }));
+  await page.goto('/');
   await expect(page.locator('[data-next-up]')).toBeHidden();
   expect(await page.locator('[data-next-up]').boundingBox()).toBeNull();
   await expect(page.getByRole('link', { name: /YouTube/ })).toBeVisible();
