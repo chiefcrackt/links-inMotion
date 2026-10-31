@@ -119,7 +119,7 @@ var DOGPARTS={
  fu:{s:0.94,pivot:[58,40],end:[55,212],at:[408,262]},
  fl:{s:0.85,pivot:[38,26],end:[40,246]},
  fp:{s:0.85,pivot:[40,28],end:[64,98]},
- hu:{s:0.82,pivot:[72,44],end:[70,232],at:[118,262+26]},   // +26: hip sits a little lower on the flat torso (A9)
+ hu:{s:0.82,pivot:[72,44],end:[70,232],at:[118,262+38]},   // +38: hip sits a little lower on the flat torso (A9)
  hl:{s:1.02,pivot:[40,28],end:[37.5,150]},
  hp:{s:1.02,pivot:[37.5,28],end:[77,151]}
 };
