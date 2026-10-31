@@ -49,5 +49,15 @@ const fs=require('node:fs');
  await reduced.waitForFunction(()=>document.querySelector('.scene').dataset.runnerOutfit==='trail');
  const still=await reduced.locator('.runcv').evaluate(c=>c.toDataURL());await reduced.waitForTimeout(150);
  assert.equal(await reduced.locator('.runcv').evaluate(c=>c.toDataURL()),still);await context.close();
- await browser.close();console.log('Passed: all outfits (race, trail, winter, HD) desktop/mobile, fresh reload choice, jumps, Hooper/game, reduced motion and fallback.');
+ // Outfit button: each tap switches to the next look in order and wraps around, without triggering a jump.
+ {const context=await browser.newContext({viewport:{width:390,height:844}});await context.addInitScript(()=>{Math.random=()=>.3});
+  const p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.route('https://**/*',r=>r.abort());
+  await p.goto('http://127.0.0.1:4187/');
+  const swap=p.getByRole('button',{name:'Change outfit (now: Trail)'});await swap.waitFor({state:'visible'});
+  const seen=[];for(const id of ['winter','hd','race','trail']){await p.locator('.outfit').click();
+   await p.waitForFunction(id=>document.querySelector('.scene').dataset.runnerOutfit===id&&!document.querySelector('.outfit').disabled,id);seen.push(id)}
+  assert.deepEqual(seen,['winter','hd','race','trail']);
+  assert.equal(await p.locator('.outfit').getAttribute('aria-label'),'Change outfit (now: Trail)');
+  assert.deepEqual(errors,[]);await context.close()}
+ await browser.close();console.log('Passed: all outfits (race, trail, winter, HD) desktop/mobile, Outfit button cycling, fresh reload choice, jumps, Hooper/game, reduced motion and fallback.');
 })().catch(e=>{console.error(e);process.exit(1)});

@@ -218,25 +218,39 @@ function makeDog(imgs, parts, opt){
   var CYCLE=1.05, SCALE=0.105, dpr=1, gw=0, gh=0, rw=0, rh=0, off=0, ph=0.1, last=0, on=true, pp=null;
   var names=['head','torso','shorts','thigh','shin','shoe','upperarm','forearm','forearm_far'],imgs={},left=names.length;
   // One independent choice per document load; never saved in localStorage.
+  // One random outfit per load (never saved); the Outfit button steps through the rest.
   // 'hd' is the original outfit redrawn sharper (inmotion-video handoff A1); it replaces every piece, so it needs no fitting.
   var outfits=['race','trail','winter','hd'],outfit=outfits[Math.floor(Math.random()*outfits.length)];
-  function outfitImages(){
-    var originals=imgs;
-    if(outfit==='hd')return Promise.all(names.map(function(n){return new Promise(function(resolve,reject){
-      var im=new Image();im.onload=function(){resolve([n,im])};im.onerror=function(){reject(new Error('HD image failed'))};
-      im.src='scene/outfits/hd/'+n+'.webp?v=1';
-    })})).then(function(entries){
-      var artwork={};entries.forEach(function(e){artwork[e[0]]=e[1]});imgs=artwork;box.dataset.runnerOutfit='hd';
-    }).catch(function(){imgs=originals;box.dataset.runnerOutfit='original'});
-    if(typeof window.fitRiverOutfit!=='function'){box.dataset.runnerOutfit='original';return Promise.resolve()}
-    var required=names.filter(function(n){return n!=='head'&&(outfit==='winter'||n!=='forearm'&&n!=='forearm_far')});
-    return Promise.all(required.map(function(n){return new Promise(function(resolve,reject){
+  var OUTFIT_NAMES={race:'Race day',trail:'Trail',winter:'Cold weather',hd:'Original',original:'Original'};
+  var originals=null,looks={},changing=false;
+  function loadImages(list,dir,ext){return Promise.all(list.map(function(n){return new Promise(function(resolve,reject){
       var im=new Image();im.onload=function(){resolve([n,im])};im.onerror=function(){reject(new Error('Outfit image failed'))};
-      im.src='scene/outfits/'+outfit+'/'+n+'.png?v=1';
-    })})).then(function(entries){
-      var artwork={};entries.forEach(function(e){artwork[e[0]]=e[1]});
-      imgs=window.fitRiverOutfit(artwork,originals,outfit);box.dataset.runnerOutfit=outfit;
-    }).catch(function(){imgs=originals;box.dataset.runnerOutfit='original'});
+      im.src=dir+n+ext;
+    })})).then(function(entries){var a={};entries.forEach(function(e){a[e[0]]=e[1]});return a})}
+  // Pieces for one outfit, loaded and fitted once, then reused. Rejects if they can't be loaded or fitted.
+  function lookFor(id){
+    if(looks[id])return Promise.resolve(looks[id]);
+    var p;
+    if(id==='hd')p=loadImages(names,'scene/outfits/hd/','.webp?v=1');
+    else if(typeof window.fitRiverOutfit!=='function')p=Promise.reject(new Error('No outfit fitter'));
+    else{var required=names.filter(function(n){return n!=='head'&&(id==='winter'||n!=='forearm'&&n!=='forearm_far')});
+      p=loadImages(required,'scene/outfits/'+id+'/','.png?v=1').then(function(art){return window.fitRiverOutfit(art,originals,id)})}
+    return p.then(function(set){return looks[id]=set});
+  }
+  function outfitImages(){
+    originals=imgs;
+    return lookFor(outfit).then(function(set){imgs=set;box.dataset.runnerOutfit=outfit})
+      .catch(function(){imgs=originals;box.dataset.runnerOutfit='original'});
+  }
+  function labelSwap(){if(swap)swap.setAttribute('aria-label','Change outfit (now: '+OUTFIT_NAMES[box.dataset.runnerOutfit]+')')}
+  // Outfit button: switch to the next look in place; he keeps running. A look that fails is skipped.
+  function nextOutfit(){
+    if(changing||!pp)return;
+    var id=outfits[(outfits.indexOf(outfit)+1)%outfits.length];
+    changing=true;if(swap)swap.disabled=true;outfit=id;
+    lookFor(id).then(function(set){imgs=set;box.dataset.runnerOutfit=id;pp=makePuppet(imgs,PARTS,{imgScale:0.3});drawRunner();labelSwap()})
+      .catch(function(){})
+      .then(function(){changing=false;if(swap)swap.disabled=false});
   }
   function size(){dpr=Math.min(window.devicePixelRatio||1,2);
     var g=grid.getBoundingClientRect(),r=run.getBoundingClientRect();gw=g.width;gh=g.height;rw=r.width;rh=r.height;
@@ -397,13 +411,14 @@ function makeDog(imgs, parts, opt){
     drawGrid();drawRunner(dt);
     if(still&&jt<0&&!hd&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over
     requestAnimationFrame(frame)}
-  var btn=box.querySelector('.jump'),paw=box.querySelector('.paw');
+  var btn=box.querySelector('.jump'),paw=box.querySelector('.paw'),swap=box.querySelector('.outfit');
   if(paw)paw.addEventListener('click',function(e){e.stopPropagation();hooper()});
   if(btn)btn.addEventListener('click',function(e){e.stopPropagation();jump()});
+  if(swap)swap.addEventListener('click',function(e){e.stopPropagation();nextOutfit()});
   if(playBtn)playBtn.addEventListener('click',function(e){e.stopPropagation();play()});
   box.addEventListener('click',function(e){if(!e.target.closest('a'))jump()});
   
-  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();if(still){on=false;return}
+  function start(){pp=makePuppet(imgs,PARTS,{imgScale:0.3});size();drawGrid();drawRunner();if(btn)btn.hidden=false;if(swap){swap.hidden=false;labelSwap()}if(playBtn&&!still)playBtn.hidden=false;showHud();loadDog();if(still){on=false;return}
     if('IntersectionObserver' in window){new IntersectionObserver(function(e){var v=e[0].isIntersecting;if(v&&!on){on=true;requestAnimationFrame(frame)}on=v}).observe(box)}
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
