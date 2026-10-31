@@ -489,7 +489,7 @@ function makeDog(imgs, parts, opt){
     requestAnimationFrame(frame)}
   function loadDog(){var dn=['torso','head','fu','fl','fp','hu','hl','hp'],di={},dl=dn.length;
     dn.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--dl===0&&dn.every(function(k){return di[k].naturalWidth>0})){dog=makeDog(di,DOGPARTS,{imgScale:0.3});if(paw&&!(G&&!G.over))paw.hidden=false}};
-      i.src='scene/hooper/'+n+'.webp?v=5';di[n]=i})}
+      i.src='scene/hooper/'+n+'.webp?v=6';di[n]=i})}
   names.forEach(function(n){var i=new Image();i.onload=i.onerror=function(){if(--left===0)outfitImages().then(start)};i.src='scene/runner/'+n+'.webp?v=3';imgs[n]=i});
   size();drawGrid();window.addEventListener('resize',function(){size();drawGrid();drawRunner()});
 })();
