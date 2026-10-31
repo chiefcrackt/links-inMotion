@@ -11,32 +11,35 @@ npm ci
 npm run preview
 ```
 
-Open http://127.0.0.1:4187. The preview serves the public page and an isolated gear backend with in-memory data. Its editor is at http://127.0.0.1:4187/admin#setup=local-preview-setup. The local setup token is for this disposable preview only; all preview data disappears when the process stops. Stop it with Ctrl+C.
+Open http://127.0.0.1:4187. It serves the same static files GitHub Pages does. The editor is at /admin/, but it always saves to the real repo on GitHub. Stop the preview with Ctrl+C.
 
 ## Repository layout
 
 - `index.html`: public page, styles, social destinations, sharing metadata, and audio controls.
-- `next-up/`: the "Next up" card. Edit `next-up/schedule.js` to change what it shows.
+- `next-up/`: the "Next up" card and its schedule (`schedule.json`).
 - `scene/`: runner/game logic, character images, and scenery.
 - `audio/`: optional background music.
-- `gear/`: public gear carousel and production backend origin.
-- `admin/`: redirect to the hosted private editor.
-- `product-admin/`: gear backend, editor, schema, import, and deployment documentation.
-- `tests/`: isolated API/import checks, local preview server, and public-page browser checks.
+- `gear/`: gear carousel, its product list (`products.json`), and uploaded photos.
+- `admin/`: the editor for gear and Next up.
+- `tests/`: local preview server and browser checks for the page and the editor.
 - `CNAME`: custom domain for GitHub Pages.
 
-## Next up card
+## Editing gear and Next up
 
-The card at the bottom of the page, above the footer, shows one thing coming up: a race, a video, or a challenge. Edit only `next-up/schedule.js`.
+Everything the page shows lives in two files in this repo:
 
-- Add one entry per race or event. The page shows the soonest entry that is live today, so you can load several races at once and each takes over when the previous one expires.
-- An entry is live from `showFrom` (optional, default right away) through `showUntil` (optional, default the `date`). Both days are included, in the viewer's local time.
-- `date` adds the event day and a countdown (`14 Days`, `1 Day`, `Today`). Without a date there is no countdown, and the entry stays until it is removed or given a `showUntil`.
-- `label`, `description`, and `link` are optional. Links must start with `https://`. No link shows a plain card.
-- `off: true` pauses one entry. `enabled: false` hides the card entirely.
-- Entries with a typo'd date or a non-https link are skipped rather than shown wrong. If nothing is live, the card disappears with no gap.
+- `gear/products.json`: the "In my rotation" carousel. Uploaded photos go in `gear/images/`.
+- `next-up/schedule.json`: the "Next up" card.
 
-After editing, bump `?v=` on the `next-up/schedule.js` script tag in `index.html` so phones don't keep the old copy.
+The easy way to change them is the editor at **https://in-motion.run/admin/**. It has two tabs, Next up and Gear. Each save is a commit to `main`, and the page updates about a minute later. There is no server: the editor talks to GitHub directly.
+
+**Signing in.** The editor uses a GitHub fine-grained personal access token that only works on this repo. Make one at GitHub → Settings → Developer settings → Fine-grained tokens: repository access "Only select repositories" → links-inMotion, permission Contents: Read and write, nothing else. Paste it into the editor. It is saved only in that browser on that device; Sign out removes it. If a token leaks, delete it on GitHub and make a new one.
+
+**How Next up decides what to show.** The card shows the soonest race that is on and hasn't passed. Each race shows until its race date (or its "last day it shows"), then the next one takes over. "Start showing on" holds a race back until that day. Races that are off, have a typo'd date, or a non-https link never show. Private notes are only visible in the editor. With nothing live, the card hides with no gap.
+
+**Gear.** Products show in list order; hidden ones stay in the editor but not on the page. Links and image links must be https. Photos are shrunk to 1000px WebP before upload.
+
+You can also edit either JSON file directly on GitHub; the fields match the editor's form.
 
 ## Verification
 
@@ -47,18 +50,10 @@ npx playwright install chromium
 npm test
 ```
 
-Individual checks:
-
-```sh
-npm run test:api
-npm run test:import
-npm run test:browser
-```
-
-Browser checks start and stop their own preview on port 4187; stop a manually running preview first. They cover desktop and mobile viewports, expected social destinations, custom-domain sharing metadata and the local preview image, game/Hooper/sound controls, published gear, and a gear-service outage. External HTTPS requests are blocked and product responses are mocked, so tests do not change hosted data or depend on social sites being online. These checks validate configured social URLs, not remote account availability.
+Browser checks start and stop their own preview on port 4187; stop a manually running preview first. They run on desktop and mobile sizes and cover the social links, sharing metadata, the game/Hooper/sound controls, the gear carousel, the Next up schedule, and the editor. External requests are blocked and GitHub is faked, so tests never change the real repo.
 
 ## Deployment
 
 The public page is a static GitHub Pages site using the domain in `CNAME`. Public files need no build step; npm dependencies are development tools. Publish changes through the repository's GitHub Pages deployment configuration. Keep sharing metadata in `index.html` aligned with the custom domain and keep `og-links.png` available at the site root.
 
-Gear storage and the private editor run separately. `gear/config.js` points to that hosted backend. See [the gear deployment guide](product-admin/README.md) for bindings, setup, source synchronization, and the existing Sites deployment. GitHub Pages changes do not deploy backend/editor changes.
+Gear and Next up are plain files in this repo, so there is nothing else to host or deploy.

@@ -51,7 +51,7 @@ test('runner, Hooper, game and sound controls work', async ({ page }) => {
 });
 
 test('gear outage leaves social links and game available', async ({ page }) => {
-  await page.route('**/api/products', route => route.fulfill({ status: 503, body: 'Unavailable' }));
+  await page.route('**/gear/products.json', route => route.fulfill({ status: 503, body: 'Unavailable' }));
   await page.goto('/');
   await expect(page.locator('[data-gear]')).toBeHidden();
   await expect(page.getByRole('link', { name: /YouTube/ })).toBeVisible();
@@ -59,8 +59,31 @@ test('gear outage leaves social links and game available', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Stop the trail game' })).toBeVisible();
 });
 
+test('shipped gear list renders the headlamp and is valid', async ({ page }) => {
+  await page.goto('/');
+  const card = page.locator('.gear-card');
+  await expect(card).toHaveCount(1);
+  await expect(card).toHaveAttribute('href', 'https://rendezvu.co/p-44886709?h=tristan-blain');
+  await expect(card).toContainText('Fenix HM55R');
+});
+
+test('hidden products stay off the page and repo images load', async ({ page }) => {
+  await page.route('**/gear/products.json', route => route.fulfill({ json: { products: [
+    { name: 'Hidden one', url: 'https://example.com/hidden', visible: false },
+    { name: 'Repo photo', url: 'https://example.com/photo', image: 'gear/images/test.webp', visible: true },
+    { name: 'Bad image', url: 'https://example.com/bad', image: 'javascript:alert(1)' },
+  ] } }));
+  await page.route('**/gear/images/test.webp', route => route.fulfill({ contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
+  await page.goto('/');
+  await expect(page.locator('.gear-card')).toHaveCount(2);
+  await expect(page.locator('.gear-card').first()).toContainText('Repo photo');
+  await expect(page.locator('.gear-card img').first()).toHaveAttribute('src', 'gear/images/test.webp');
+  await expect(page.locator('.gear-card').nth(1).locator('img')).toHaveCount(0);
+});
+
 test('published gear renders and opens the configured product', async ({ page }) => {
-  await page.route('**/api/products', route => route.fulfill({ json: { products: [
+  await page.route('**/gear/products.json', route => route.fulfill({ json: { products: [
     { name: 'Test headlamp', brand: 'Test brand', note: 'Night runs', url: 'https://example.com/headlamp' },
   ] } }));
   await page.goto('/');
@@ -70,7 +93,7 @@ test('published gear renders and opens the configured product', async ({ page })
 });
 
 // "Next up" card. The clock is pinned so the schedule is tested on known days.
-const schedule = config => route => route.fulfill({ contentType: 'text/javascript', body: `window.NEXT_UP=${JSON.stringify(config)};` });
+const schedule = config => route => route.fulfill({ json: config });
 const at = (page, day) => page.clock.setFixedTime(new Date(`${day}T12:00:00`));
 
 test('next up shows the shipped race with countdown and link', async ({ page }) => {
@@ -105,14 +128,14 @@ test('next up shows on race day and the next race takes over the day after', asy
 
 test('every entry in the shipped schedule is valid', async ({ page }) => {
   await page.goto('/');
-  const bad = await page.evaluate(() => window.NEXT_UP.items
+  const bad = await page.evaluate(async () => (await (await fetch('next-up/schedule.json')).json()).items
     .filter(item => !window.NextUpCard.normalize({ ...item, off: false }))
     .map(item => item.title || '(no title)'));
   expect(bad).toEqual([]);
 });
 
 test('next up hides with no gap when nothing is live', async ({ page }) => {
-  await page.route('**/next-up/schedule.js*', schedule({ enabled: true, items: [{ title: 'Past', date: '2026-01-01' }] }));
+  await page.route('**/next-up/schedule.json*', schedule({ enabled: true, items: [{ title: 'Past', date: '2026-01-01' }] }));
   await page.goto('/');
   await expect(page.locator('[data-next-up]')).toBeHidden();
   expect(await page.locator('[data-next-up]').boundingBox()).toBeNull();
@@ -120,7 +143,7 @@ test('next up hides with no gap when nothing is live', async ({ page }) => {
 });
 
 test('next up hands off to the next scheduled entry', async ({ page }) => {
-  await page.route('**/next-up/schedule.js*', schedule({ enabled: true, items: [
+  await page.route('**/next-up/schedule.json*', schedule({ enabled: true, items: [
     { title: 'Later race', date: '2027-06-05', showFrom: '2026-12-01', link: 'https://example.com/later' },
     { title: 'First race', date: '2026-11-14', showUntil: '2026-11-16' },
     { title: 'Standing challenge', description: 'No date on this one.' },
@@ -143,7 +166,7 @@ test('next up hands off to the next scheduled entry', async ({ page }) => {
 test('next up skips unsafe or broken entries and renders text literally', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.route('**/next-up/schedule.js*', schedule({ enabled: true, items: [
+  await page.route('**/next-up/schedule.json*', schedule({ enabled: true, items: [
     { title: 'Bad link', link: 'javascript:alert(1)' },
     { title: 'Bad date', date: '2026-13-40' },
     { title: 'Paused', off: true },
@@ -160,7 +183,7 @@ test('next up skips unsafe or broken entries and renders text literally', async 
 });
 
 test('next up stays hidden when switched off', async ({ page }) => {
-  await page.route('**/next-up/schedule.js*', schedule({ enabled: false, items: [{ title: 'Hidden' }] }));
+  await page.route('**/next-up/schedule.json*', schedule({ enabled: false, items: [{ title: 'Hidden' }] }));
   await page.goto('/');
   await expect(page.locator('[data-next-up]')).toBeHidden();
   await expect(page.locator('.nu-card')).toHaveCount(0);

@@ -1,9 +1,0 @@
-{
-  "project_id": "appgprj_6ae360377df08191849af10347ba3411",
-  "expected_url": "https://tristan-inmotion-gear.easytick4097.chatgpt.site",
-  "source_checkout": "hosted-service",
-  "source_sync": "Copy product-admin/backend.mjs, admin.html, editor.js, editor.css, and catalog-imports.mjs into hosted-service/gear before building.",
-  "source_commit": "3f8914970cfe536bc0dfb58565da97084e2a2d20",
-  "version_id": "appgprj_6ae360377df08191849af10347ba3411~appgver_639b4aef908081919f605dea85032f29",
-  "deployment_id": "appgdep_6ae386a24eb08191a87c94d3040ba80d"
-}

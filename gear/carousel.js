@@ -6,9 +6,9 @@
   const previous = root.querySelector('[data-previous]');
   const next = root.querySelector('[data-next]');
   const status = root.querySelector('[data-gear-status]');
-  const origin = (window.GEAR_API_ORIGIN || '').replace(/\/$/, '');
-  if (!origin) return;
   const safeLink = value => { try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { return null; } };
+  // Images are either https links or files uploaded into this repo (gear/images/...).
+  const safeImage = value => /^gear\/images\/[\w.-]+\.(webp|jpe?g|png)$/i.test(value || '') ? value : safeLink(value);
   function update() {
     previous.disabled = track.scrollLeft < 4;
     next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
@@ -19,8 +19,9 @@
     const link = document.createElement('a');
     link.className = 'gear-card'; link.href = href; link.target = '_blank'; link.rel = 'sponsored noopener noreferrer';
     const art = document.createElement('div'); art.className = 'gear-art';
-    if (item.image && safeLink(item.image)) {
-      const img = document.createElement('img'); img.src = item.image; img.alt = item.name; img.loading = 'lazy'; img.decoding = 'async';
+    const image = safeImage(item.image);
+    if (image) {
+      const img = document.createElement('img'); img.src = image; img.alt = item.name; img.loading = 'lazy'; img.decoding = 'async';
       img.addEventListener('error', () => { img.remove(); art.textContent = 'T.im'; }, { once: true }); art.append(img);
     } else art.textContent = 'T.im';
     const body = document.createElement('div'); body.className = 'gear-body';
@@ -34,10 +35,10 @@
   next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth * .85, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }));
   track.addEventListener('scroll', update, { passive: true });
   new ResizeObserver(update).observe(track);
-  fetch(origin + '/api/products', { credentials: 'omit', signal: AbortSignal.timeout(10000) })
+  fetch('gear/products.json', { cache: 'no-cache', signal: AbortSignal.timeout(10000) })
     .then(response => { if (!response.ok) throw new Error('Products unavailable'); return response.json(); })
     .then(data => {
-      const cards = (Array.isArray(data.products) ? data.products : []).map(card).filter(Boolean);
+      const cards = (Array.isArray(data.products) ? data.products : []).filter(item => item && item.visible !== false && item.name).map(card).filter(Boolean);
       if (!cards.length) return;
       track.replaceChildren(...cards); root.hidden = false;
       status.textContent = cards.length + (cards.length === 1 ? ' pick' : ' picks'); update();

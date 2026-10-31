@@ -1,4 +1,4 @@
-/* Renders the "Next up" card from window.NEXT_UP (next-up/schedule.js).
+/* Renders the "Next up" card from next-up/schedule.json (edited at /admin).
    Text goes in with textContent only; links must be https. */
 (function () {
   var DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -85,9 +85,11 @@
     section.hidden = false;
   }
 
-  window.NextUpCard = { pick: pick, normalize: normalize };
+  window.NextUpCard = { pick: pick, normalize: normalize, parseDay: parseDay, today: today };
   var section = document.querySelector('[data-next-up]');
-  if (!section) return;
-  try { var item = pick(window.NEXT_UP); if (item) render(section, item); }
-  catch (e) { section.hidden = true; }
+  if (!section || !window.fetch) return;
+  fetch('next-up/schedule.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error('No schedule'); return r.json(); })
+    .then(function (config) { var item = pick(config); if (item) render(section, item); })
+    .catch(function () { section.hidden = true; });
 })();

@@ -3,11 +3,8 @@
   "version": "1.0.0",
   "description": "Link in bio page",
   "scripts": {
-    "preview": "node tests/gear-preview.mjs",
-    "test": "npm run test:api && npm run test:import && npm run test:browser",
-    "test:api": "node tests/gear-api.mjs",
-    "test:import": "node tests/gear-import.mjs",
-    "test:browser": "playwright test"
+    "preview": "node tests/serve.mjs",
+    "test": "playwright test"
   },
   "repository": {
     "type": "git",
