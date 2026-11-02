@@ -223,6 +223,54 @@
       #rsvp iframe { animation: none; }
     }
 
+    /* Warm string lights along the bottom of the hero */
+    .hero .string-lights {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0 4%;
+      pointer-events: none;
+      z-index: 1;
+      animation: none;
+    }
+    .hero .string-lights::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 18px;
+      border-bottom: 1px solid rgba(185, 164, 103, 0.6);
+      border-radius: 50%;
+    }
+    .hero .string-lights span {
+      position: relative;
+      width: 9px;
+      height: 12px;
+      margin-top: 8px;
+      border-radius: 50% 50% 45% 45%;
+      background: #f6d88a;
+      box-shadow: 0 0 6px 2px rgba(246, 216, 138, 0.6), 0 0 16px 4px rgba(246, 170, 80, 0.35);
+      animation: twinkle 3.2s ease-in-out infinite;
+    }
+    .hero .string-lights span:nth-child(odd) { animation-duration: 4.1s; }
+    .hero .string-lights span:nth-child(3n) { animation-delay: -1.2s; }
+    .hero .string-lights span:nth-child(4n) { animation-delay: -2.4s; }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero .string-lights span { animation: none; }
+    }
+
     .divider {
       width: 120px;
       height: 1px;
@@ -292,6 +340,22 @@
     <h1 class="names script">Tristan &amp; Travis</h1>
     <p class="date">September 25, 2027</p>
     <p class="placeholder" style="margin-top: 1.5rem;">At our home in Parker, Pennsylvania</p>
+    <div class="string-lights" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
   </header>
 
   <section id="welcome">
