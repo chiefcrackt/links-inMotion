@@ -77,6 +77,26 @@
       margin-top: 1rem;
     }
 
+    .hero .script {
+      background: linear-gradient(100deg, #b9a467 0%, #b9a467 40%, #f3e7b8 50%, #b9a467 60%, #b9a467 100%);
+      background-size: 250% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      text-shadow: none;
+      animation: shimmer 6s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 150% center; }
+      100% { background-position: -150% center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero .script { animation: none; }
+    }
+
     .divider {
       width: 120px;
       height: 1px;
