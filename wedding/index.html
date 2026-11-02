@@ -107,7 +107,7 @@
       .hero .script { animation: none; }
     }
 
-    /* Hero photo layer with a slow drift */
+    /* Hero photo layer (static) */
     .hero::before {
       content: "";
       position: absolute;
@@ -116,7 +116,6 @@
       background:
         linear-gradient(180deg, rgba(17, 17, 17, 0.35), rgba(17, 17, 17, 0.75)),
         url("images/hero.jpg") center / cover no-repeat;
-      animation: drift 24s ease-in-out infinite alternate;
     }
 
     .hero > * {
@@ -137,11 +136,6 @@
     @keyframes rise {
       from { opacity: 0; transform: translateY(18px); }
       to { opacity: 1; transform: none; }
-    }
-
-    @keyframes drift {
-      from { transform: scale(1); }
-      to { transform: scale(1.08); }
     }
 
     /* Gold divider draws itself as it scrolls into view */
@@ -239,10 +233,10 @@
       background: #f6d88a;
       box-shadow: 0 0 6px 2px rgba(246, 216, 138, 0.55);
       opacity: 0;
-      animation: drift linear infinite;
+      animation: speck-drift linear infinite;
     }
 
-    @keyframes drift {
+    @keyframes speck-drift {
       0% { transform: translate(0, 0); opacity: 0; }
       15% { opacity: 0.9; }
       50% { transform: translate(12px, -50vh); opacity: 0.7; }
