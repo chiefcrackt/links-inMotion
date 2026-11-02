@@ -189,6 +189,25 @@
       .btn::after { display: none; }
     }
 
+    .rsvp-title {
+      font-family: "Great Vibes", cursive;
+      font-weight: 400;
+      font-size: 3.5rem;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+
+    .rsvp-intro {
+      font-size: 1.2rem;
+      color: var(--ivory);
+      margin-bottom: 1.5rem;
+    }
+
+    #rsvp iframe {
+      border: 1px solid var(--gold) !important;
+      box-shadow: 0 0 0 6px var(--deep-green), 0 0 0 7px rgba(185, 164, 103, 0.5);
+    }
+
     .divider {
       width: 120px;
       height: 1px;
@@ -276,8 +295,8 @@
   </section>
 
   <section id="rsvp">
-    <h2>RSVP</h2>
-    <p>Please let us know if you can join us.</p>
+    <h2 class="rsvp-title">RSVP</h2>
+    <p class="rsvp-intro">We would love to celebrate with you. Please let us know if you can join us.</p>
     <iframe
       src="https://docs.google.com/forms/d/e/1FAIpQLSf6i9JbPmC1ZD2EHDs0qYiVosfg8uj6xqlgd31b1CoXb9nYZg/viewform?embedded=true"
       width="100%"
