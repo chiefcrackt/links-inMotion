@@ -304,7 +304,7 @@
       <p><strong>Dress:</strong> Casual or dressed up, your choice. Just plan for the outdoors.</p>
       <p style="margin-top: 1.5rem;">
         <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Tristan+%26+Travis+Wedding&amp;dates=20270925T150000/20270926T000000&amp;ctz=America/New_York&amp;location=Parker,+PA&amp;details=Saturday+September+25,+2027+at+3:00+PM" target="_blank" rel="noopener">Google Calendar</a>
-        <a class="btn" href="data:text/calendar;charset=utf-8,BEGIN:VCALENDAR%0D%0AVERSION:2.0%0D%0APRODID:-//Tristan%20and%20Travis//Wedding//EN%0D%0ABEGIN:VEVENT%0D%0ADTSTART:20270925T190000Z%0D%0ADTEND:20270926T040000Z%0D%0ASUMMARY:Tristan%20%26%20Travis%20Wedding%0D%0ALOCATION:Parker%2C%20PA%0D%0AEND:VEVENT%0D%0AEND:VCALENDAR" download="tristan-and-travis-wedding.ics">Apple / Outlook</a>
+        <a class="btn" href="#" id="ics-download">Apple / Outlook</a>
       </p>
     </div>
   </section>
@@ -351,6 +351,42 @@
     <p class="script" style="font-size: 1.6rem; margin: 0 0 0.5rem;">Tristan &amp; Travis</p>
     <p>September 2027</p>
   </footer>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("ics-download");
+      if (!btn) return;
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        var lines = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//Tristan and Travis//Wedding//EN",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          "BEGIN:VEVENT",
+          "UID:wedding-2027-09-25@in-motion.run",
+          "DTSTAMP:20261102T000000Z",
+          "DTSTART:20270925T190000Z",
+          "DTEND:20270926T040000Z",
+          "SUMMARY:Tristan & Travis Wedding",
+          "LOCATION:Parker\\, PA",
+          "DESCRIPTION:Saturday\\, September 25\\, 2027 at 3:00 PM",
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ];
+        var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "tristan-and-travis-wedding.ics";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+    })();
+  </script>
 
 </body>
 </html>
