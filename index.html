@@ -71,6 +71,8 @@ h2{margin:0;font-family:var(--display);font-weight:700;font-size:.85rem;letter-s
 .name{font-family:var(--display);font-weight:700;font-size:1.35rem;line-height:1.05;letter-spacing:.06em;text-transform:uppercase}
 .sub{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}
 .arrow{margin-left:auto;font-family:var(--display);font-weight:700;color:var(--teal);font-size:1.3rem}
+.contact .row{border-color:rgba(232,201,106,.45);background:linear-gradient(110deg,rgba(232,201,106,.06),rgba(19,35,61,.82))}
+.contact .row:hover,.contact .row:focus-visible{border-color:var(--gold);background:rgba(232,201,106,.1)}
 footer{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:700;
   letter-spacing:.22em;text-transform:uppercase;font-size:.78rem;color:var(--muted)}
 footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:block}
@@ -232,8 +234,9 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   <section class="nu on" style="--i:12.5" data-next-up hidden aria-labelledby="h-next">
     <h2 id="h-next">Next up</h2>
   </section>
-  <section aria-labelledby="h-contact">
+  <section class="contact" aria-labelledby="h-contact">
     <h2 class="on" style="--i:13" id="h-contact">Let's work together</h2>
+    <p class="note on" style="--i:13">Partnerships, collaborations &amp; projects</p>
     <a class="row on" style="--i:14" href="mailto:Tristan@in-motion.run?subject=Business%20inquiry">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg></span>
       <span class="txt"><span class="name">Business inquiries</span><span class="sub">Tristan@in-motion.run</span></span><span class="arrow" aria-hidden="true">→</span></a>
