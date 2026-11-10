@@ -12,6 +12,7 @@ const fs=require('node:fs');
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(r.url().includes('/scene/travis/'))travis.push(r.url())});
   await page.route('https://**/*',r=>r.abort());
+  await page.clock.setFixedTime(new Date('2026-06-01T12:00:00'));   // daytime, so night shift (10pm-5am) stays off
   await page.goto('http://127.0.0.1:4187/');
   const aid=page.getByRole('button',{name:'Aid station: Travis brings a PB&J'});
   await aid.waitFor({state:'visible'});

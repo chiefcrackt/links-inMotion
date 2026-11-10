@@ -44,6 +44,9 @@ function makePuppet(imgs, parts, opt){
   // stand (0..1) blends to a relaxed standing pose with both feet down; arm {sw,el,w} poses the near arm
   // (reach, eat, wave), w = how much it overrides the swing.
   var J={tuck:0,crouch:0,lift:0,w:0,pump:0,stand:0,arm:null};
+  // Night gear, set by the scene: lamp draws a headlamp (strap clipped to the head art, so it fits every outfit);
+  // farHand(ctx, fist, phase) draws something held in the far hand, in rig units, behind the body.
+  var gear={lamp:false,farHand:null,farArm:null};   // farArm {sw,el}: hold the far arm out (back) so what it carries clears the body
   function mixv(a,b,t){return a+(b-a)*t}
   function leg(p,h){var hip=cr(HIP,p),kn=cr(KNEE,p),pf=cr(PF,p);
     if(J.tuck>0){var T=Math.PI*2;hip=mixv(hip,40+10*Math.cos(T*p),J.tuck);kn=mixv(kn,108,J.tuck);pf=mixv(pf,32,J.tuck)}
@@ -60,8 +63,21 @@ function makePuppet(imgs, parts, opt){
   function dark(name){if(darkCache[name])return darkCache[name];var src=imgs[name],c=document.createElement('canvas');
     c.width=src.naturalWidth||src.width;c.height=src.naturalHeight||src.height;var x=c.getContext('2d');x.drawImage(src,0,0);
     x.globalCompositeOperation='source-atop';x.fillStyle='rgba(8,14,30,.32)';x.fillRect(0,0,c.width,c.height);return darkCache[name]=c}
-  function piece(ctx,name,at,angle,sc,shade){var info=parts[name]||parts[name.replace('_far','')];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(angle*R);if(sc)ctx.scale(sc,sc);
-    ctx.scale(1/K,1/K);ctx.drawImage(shade?dark(name):imgs[name],-info.pivot[0]*K,-info.pivot[1]*K);ctx.restore()}
+  function piece(ctx,name,at,angle,sc,shade,img){var info=parts[name]||parts[name.replace('_far','')];ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(angle*R);if(sc)ctx.scale(sc,sc);
+    ctx.scale(1/K,1/K);ctx.drawImage(img||(shade?dark(name):imgs[name]),-info.pivot[0]*K,-info.pivot[1]*K);ctx.restore()}
+  var strapHead=null;
+  function strapped(){if(strapHead)return strapHead;var src=imgs.head,c=document.createElement('canvas');   // head art + headlamp strap, trimmed to the head's outline
+    c.width=src.naturalWidth||src.width;c.height=src.naturalHeight||src.height;var x=c.getContext('2d');x.drawImage(src,0,0);
+    x.globalCompositeOperation='source-atop';x.scale(K,K);
+    x.fillStyle='#1E2633';x.beginPath();x.moveTo(180,44);x.lineTo(0,58);x.lineTo(0,78);x.lineTo(180,64);x.closePath();x.fill();
+    x.strokeStyle='rgba(46,155,173,.85)';x.lineWidth=4;x.beginPath();x.moveTo(180,54);x.lineTo(0,68);x.stroke();
+    return strapHead=c}
+  function lampBody(ctx,at,a){var pv=parts.head.pivot;ctx.save();ctx.translate(at[0],at[1]);ctx.rotate(a*R);ctx.translate(-pv[0],-pv[1]);
+    ctx.fillStyle='#2A3445';ctx.strokeStyle='#0E131C';ctx.lineWidth=4;ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(136,40,30,32,7);else ctx.rect(136,40,30,32);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#FFF6DC';ctx.beginPath();ctx.ellipse(164,56,5,11,0,0,Math.PI*2);ctx.fill();
+    var q=ctx.getTransform().transformPoint({x:168,y:56});ctx.restore();return {x:q.x,y:q.y}}   // lens, in the canvas's device pixels
+
   function drawLeg(ctx,q,h,shade){
     piece(ctx,'shin',q.k,SN.rest-q.shin,0,shade);piece(ctx,'shoe',q.an,q.foot,SHOE_SCALE,shade);piece(ctx,'thigh',h,TH.rest-q.hip,0,shade)}
   function drawArm(ctx,sh,p,shade){var sw=cr(ARM,p),el=cr(ELB,p);
@@ -70,6 +86,7 @@ function makePuppet(imgs, parts, opt){
     if(J.pump>0&&!shade){sw=mixv(sw,148,J.pump);el=mixv(el,30,J.pump)}                   // milestone fist pump
     if(J.stand>0){sw=mixv(sw,shade?4:-4,J.stand);el=mixv(el,14,J.stand)}                // arms hang at rest
     if(J.arm&&J.arm.w>0&&!shade){sw=mixv(sw,J.arm.sw,J.arm.w);el=mixv(el,J.arm.el,J.arm.w)}
+    if(shade&&gear.farArm){sw=gear.farArm.sw+0.25*sw;el=gear.farArm.el}
     var fo=sw+el,e=pt(sh,UA.len,sw);
     piece(ctx,shade&&imgs.forearm_far?'forearm_far':'forearm',e,FA.rest-fo,0,shade);piece(ctx,'upperarm',sh,UA.rest-sw,0,shade);
     return pt(e,FA.len*0.93,fo)}   // the fist
@@ -97,16 +114,18 @@ function makePuppet(imgs, parts, opt){
     var sh=[shBase[0]+c.shoulderTwist,shBase[1]],fs=[shBase[0]+FAR_SH[0]-c.shoulderTwist,shBase[1]+FAR_SH[1]];
     var nh=[h[0]+c.pelvisShift*0.5,h[1]],fh=[h[0]+FAR_HIP[0]-c.pelvisShift*0.5,h[1]+FAR_HIP[1]];
     var nq=leg(p,nh),fq=leg(p+0.5,fh);
-    drawArm(ctx,fs,p+0.5,true);
+    var ff=drawArm(ctx,fs,p+0.5,true);if(gear.farHand)gear.farHand(ctx,ff,p);
     drawLeg(ctx,fq,fh,true);
     drawLeg(ctx,nq,nh,false);
     piece(ctx,'shorts',h,c.pelvisTilt);
-    piece(ctx,'head',neck,LEAN*0.3+(tA-LEAN)*(1+c.headCounter));
+    var hA=LEAN*0.3+(tA-LEAN)*(1+c.headCounter),lamp=null;
+    piece(ctx,'head',neck,hA,0,false,gear.lamp?strapped():null);
+    if(gear.lamp)lamp=lampBody(ctx,neck,hA);
     ctx.save();ctx.translate(waist[0],waist[1]);ctx.rotate(tA*R);ctx.scale(1/K,c.squash/K);ctx.drawImage(imgs.torso,-parts.torso.pivot[0]*K,-parts.torso.pivot[1]*K);ctx.restore();
     var fist=drawArm(ctx,sh,p,false);
     ctx.restore();
-    return {fist:[x+(flip?-scale:scale)*fist[0],groundY+scale*fist[1]]}}
-  return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J}
+    return {fist:[x+(flip?-scale:scale)*fist[0],groundY+scale*fist[1]],lamp:lamp}}
+  return {draw:draw,groundSpeed:groundSpeed,leg:leg,hipY:hipY,jump:J,gear:gear}
 }
 
 /* Hooper's joints and rig (flat A9 pieces; leg hinges sit at the centers of each piece's rounded ends,
@@ -213,9 +232,13 @@ function makeDog(imgs, parts, opt){
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(ul,0,0);ctx.restore();         // ...and again on top, trimmed to the body, so the shoulder and haunch roll inside his outline
     low(q.c);low(q.a);                                                                   // near lower legs over the body
     var nk=onBody(NECK,q.b);
-    piece(ctx,'head',nk,-q.b.pitch*0.7-thAt(U_NECK,q.b.arch)/R*0.5+2*Math.sin(T*p+0.8));                            // head stays fairly level, bobs with the stride
-    ctx.restore()}
-  return {draw:draw,stride:stride,pose:pose}
+    var hA=-q.b.pitch*0.7-thAt(U_NECK,q.b.arch)/R*0.5+2*Math.sin(T*p+0.8);
+    piece(ctx,'head',nk,hA);                            // head stays fairly level, bobs with the stride
+    var collar=null;if(gear.collar){var hp=P.head;ctx.save();ctx.translate(nk[0],nk[1]);ctx.rotate(hA*R);ctx.scale(hp.s,hp.s);ctx.translate(-hp.pivot[0],-hp.pivot[1]);
+      var m=ctx.getTransform().transformPoint({x:80,y:286});ctx.restore();collar={x:m.x,y:m.y}}   // just under the collar buckle, device pixels
+    ctx.restore();return {collar:collar}}
+  var gear={collar:false};
+  return {draw:draw,stride:stride,pose:pose,gear:gear}
 }
 
 /* Run scene for the links page: draws the cutout runner and the grid floor each frame, with the floor
@@ -318,7 +341,7 @@ function makeDog(imgs, parts, opt){
   function drawDog(ctx,gy){if(!hd)return;var lift=0,air=0;
     if(hd.hop>0){var u=hd.hop/0.5;lift=HOP*4*u*(1-u);air=lift/HOP}
     ctx.fillStyle='rgba(0,0,0,'+(0.38*(1-0.5*air)).toFixed(3)+')';ctx.beginPath();ctx.ellipse(hd.x+20,gy,22*(1-0.4*air),3*(1-0.4*air),0,0,Math.PI*2);ctx.fill();
-    dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
+    return dog.draw(ctx,hd.p,hd.x,gy,DSCALE,lift)}
 
   // ---- Aid station: Tristan stops, Travis walks in from the right with a PB&J, Tristan eats it,
   // they wave, Travis walks back off to the right, and Tristan runs on. null when it isn't playing.
@@ -453,6 +476,31 @@ function makeDog(imgs, parts, opt){
         ctx.beginPath();ctx.moveTo(x,gy+1);ctx.quadraticCurveTo(x+w*0.45,gy-h*1.45,x+w,gy+1);ctx.stroke();
         ctx.strokeStyle=o.hit?'#A0687A':'#7E5534';ctx.lineWidth=h*0.32;ctx.beginPath();ctx.moveTo(x+w*0.55,gy-h*0.55);ctx.quadraticCurveTo(x+w*0.75,gy-h*0.2,x+w*0.82,gy+1);ctx.stroke();
         ctx.strokeStyle='rgba(242,213,122,.95)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+w*0.12,gy-h*0.5);ctx.quadraticCurveTo(x+w*0.4,gy-h*1.2,x+w*0.62,gy-h*0.7);ctx.stroke()}})}
+  // ---- Night shift (scene/night.js flips the .night class): headlamp + beam on Tristan, a blinking light on
+  // Hooper's collar, and Travis carries a lantern. NK fades the lights in and out (0..1).
+  var NIGHT=box.classList.contains('night'),NK=NIGHT?1:0,lanternAt=null;
+  box.addEventListener('nightchange',function(e){NIGHT=!!(e.detail&&e.detail.night);if(still||!on){NK=NIGHT?1:0;drawRunner()}});
+  function glow(ctx,x,y,r,rgb,a){var g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba('+rgb+','+a.toFixed(3)+')');g.addColorStop(1,'rgba('+rgb+',0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+  function pool(ctx,x,gy,rx,rgb,a){ctx.save();ctx.translate(x,gy);ctx.scale(1,0.15);glow(ctx,0,0,rx,rgb,a);ctx.restore()}
+  function lantern(ctx,f,p){var sway=7*Math.sin(Math.PI*2*p+0.6);ctx.save();ctx.translate(f[0],f[1]);ctx.rotate(sway*Math.PI/180);ctx.scale(1.35,1.35);   // rig units (source px)
+    ctx.lineCap='round';ctx.strokeStyle='#4A5466';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,36,30,Math.PI*1.04,Math.PI*1.96);ctx.stroke();   // bail
+    ctx.fillStyle='#2A303C';ctx.beginPath();ctx.moveTo(-20,30);ctx.lineTo(20,30);ctx.lineTo(34,50);ctx.lineTo(-34,50);ctx.closePath();ctx.fill();   // cap
+    var g=ctx.createLinearGradient(0,50,0,120);g.addColorStop(0,'#FFF1C4');g.addColorStop(1,'#F2B54A');ctx.fillStyle=g;ctx.fillRect(-29,50,58,70);   // glass
+    ctx.fillStyle='#FFFDF2';ctx.beginPath();ctx.ellipse(0,90,9,17,0,0,Math.PI*2);ctx.fill();   // flame
+    ctx.strokeStyle='#2A303C';ctx.lineWidth=6;ctx.strokeRect(-29,50,58,70);
+    ctx.fillStyle='#2A303C';ctx.fillRect(-36,118,72,14);   // base
+    var m=ctx.getTransform().transformPoint({x:0,y:86});lanternAt={x:m.x/dpr,y:m.y/dpr};ctx.restore()}
+  function drawNight(ctx,gy,me,dg){if(NK<0.01)return;var k=NK;ctx.save();ctx.globalCompositeOperation='lighter';
+    if(me&&me.lamp){var L={x:me.lamp.x/dpr,y:me.lamp.y/dpr},tx=L.x+84;   // headlamp beam onto the trail ahead
+      var g=ctx.createLinearGradient(L.x,L.y,tx,gy);g.addColorStop(0,'rgba(255,244,214,'+(0.32*k).toFixed(3)+')');g.addColorStop(1,'rgba(255,244,214,'+(0.05*k).toFixed(3)+')');
+      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(L.x,L.y-1.2);ctx.lineTo(tx+44,gy+2);ctx.lineTo(tx-30,gy+2);ctx.lineTo(L.x,L.y+1.2);ctx.closePath();ctx.fill();
+      pool(ctx,tx+6,gy,46,'255,240,200',0.42*k);glow(ctx,L.x,L.y,9,'255,250,230',0.9*k)}
+    if(lanternAt){var f=0.9+0.1*Math.sin(performance.now()/90)*Math.sin(performance.now()/233);   // a little flicker
+      glow(ctx,lanternAt.x,lanternAt.y,26,'255,196,104',0.42*k*f);pool(ctx,lanternAt.x,gy,40,'255,190,100',0.4*k*f)}
+    if(dg&&dg.collar&&(still||performance.now()%1200<650)){var c={x:dg.collar.x/dpr,y:dg.collar.y/dpr};   // Hooper's collar light blinks
+      glow(ctx,c.x,c.y,6,'127,227,240',0.85*k);glow(ctx,c.x,c.y,1.8,'235,255,255',k)}
+    ctx.restore()}
   var lastFist=null;
   function footX(p,rx){var q=pp.leg(p,[0,0]);return rx+(q.an[0]+40)*SCALE}
   function drawRunner(dt){rctx.clearRect(0,0,rw,rh);if(!pp)return;var gy=rh-5,rx=rw/2-6;
@@ -463,17 +511,20 @@ function makeDog(imgs, parts, opt){
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD*GS);
     drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
-    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}var me=pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();drawDog(bctx,gy+1);
+    var lit=NK>0.01;pp.gear.lamp=lit;if(dog)dog.gear.collar=lit;if(tv){tv.gear.farHand=lit?lantern:null;tv.gear.farArm=lit?{sw:-30,el:14}:null}lanternAt=null;
+    bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}var me=pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();var dg=drawDog(bctx,gy+1);
     if(aid){lastFist=me.fist;drawAid(bctx,gy,aid.step==='give'||aid.step==='eat'||aid.step==='still'?me.fist:null)}
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
-    edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top
+    if(NIGHT)edge(1.3,1.1,'#CFE0F2',0.6);else edge(1.3,1.1,'#F2D57A',0.95);    // sun behind him: gold along the back and top (cool moonlight at night)
     edge(-0.6,-1.1,'#2E9BAD',0.55);  // grid glow from below: teal along the underside
+    drawNight(rctx,gy,me,dg);
     drawCrumbs(rctx);
     drawBurst(rctx,gy)}
   function frame(t){if(!on){last=0;return}var dt=last?Math.min(.05,(t-last)/1000):0;last=t;
     if(pp){var prev=ph,jumping=jt>=0||st>=0||RUNK<0.6,fs=pp.groundSpeed*SCALE/CYCLE*RUNK;ph=(ph+dt*SPD*GS*RUNK/CYCLE)%1;off+=fs*SPD*GS*dt;updateJump(dt);updateStumble(dt);updateDog(dt,fs*SPD);updateGame(dt,fs);updateExtras(dt,fs);updateAid(dt,rh-5,lastFist);
       if(!jumping&&ph<prev)ripples.push({x:footX(0,rw/2-6),t:0});            // near foot lands at the start of the cycle
       if(!jumping&&prev<0.5&&ph>=0.5)ripples.push({x:footX(0,rw/2-6)+10*SCALE,t:0})} // far foot lands halfway (same pose, one step later)
+    NK+=((NIGHT?1:0)-NK)*Math.min(1,dt*1.1);if(Math.abs(NK-(NIGHT?1:0))<0.005)NK=NIGHT?1:0;
     drawGrid();drawRunner(dt);
     if(box.classList.contains('dogout')!==!!hd)box.classList.toggle('dogout',!!hd);   // fade the buttons on phones while Hooper is out (he runs under them)
     if(still&&jt<0&&!hd&&!ripples.length){on=false;return}   // reduced motion: stop again once the jump is over

@@ -141,6 +141,30 @@ footer i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:b
 @keyframes near{to{background-position:-560px 100%}}
 @keyframes slide{to{background-position:-520px 0}}
 @media (prefers-reduced-motion:reduce){.scene *{animation:none!important}}
+/* Night shift (scene/night.js): 10pm-5am the sun sets behind the ridge and a moon comes up. Tap the sun (or moon) to switch. */
+.scene .nightsky{left:0;right:0;top:0;height:62%;background:linear-gradient(#030812,#07112A 70%,rgba(7,17,42,.5));opacity:0;transition:opacity 2.6s ease}
+.scene .sun{transition:transform 2.6s cubic-bezier(.5,0,.8,.6),opacity 2.6s ease}
+.scene .moon{left:20%;top:24px;width:30px;height:30px;margin-left:-15px;border-radius:50%;background:transparent;
+  box-shadow:9px -4px 0 0 #F3EEDB;filter:drop-shadow(0 0 7px rgba(243,238,219,.55));
+  transform:translateY(110px);opacity:0;transition:transform 2.4s cubic-bezier(.2,.6,.3,1) 1.2s,opacity 1.2s ease 1.2s}
+.scene .stars::after{content:"";position:absolute;inset:0;opacity:0;background:
+  radial-gradient(1.2px 1.2px at 19% 9%,#F6F4EF 50%,transparent 51%),radial-gradient(1px 1px at 34% 27%,#F6F4EF 50%,transparent 51%),
+  radial-gradient(1.4px 1.4px at 58% 8%,#F6F4EF 50%,transparent 51%),radial-gradient(1px 1px at 71% 44%,#F6F4EF 50%,transparent 51%),
+  radial-gradient(1.2px 1.2px at 94% 22%,#E8C96A 50%,transparent 51%),radial-gradient(1px 1px at 46% 36%,#F6F4EF 50%,transparent 51%);
+  background-size:520px 100%;background-repeat:repeat-x}
+.scene .sunhit{z-index:3;pointer-events:auto;left:50%;top:10px;width:132px;height:72px;margin-left:-66px;padding:0;border:0;border-radius:66px 66px 12px 12px;
+  background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.scene .sunhit:focus-visible{outline:1px dashed rgba(232,201,106,.7);outline-offset:2px}
+.scene.night .nightsky{opacity:.8}
+.scene.night .sun{transform:translateY(130px);opacity:.25}
+.scene.night .moon{transform:none;opacity:1}
+.scene.night .stars{opacity:1}
+.scene.night .stars::after{animation:twinkle 3.2s ease-in-out infinite alternate,slide 90s linear infinite}
+.scene.night .glint{filter:saturate(0) brightness(1.5) opacity(.35)}
+.scene.night .sunhit{left:20%;top:12px;width:56px;height:56px;margin-left:-28px;border-radius:50%}
+.scene.notrans *,.scene.notrans .stars::after{transition:none!important}
+@keyframes twinkle{0%{opacity:.15}50%{opacity:.9}100%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.scene .nightsky,.scene .sun,.scene .moon{transition:none}.scene.night .stars::after{animation:none!important;opacity:.7}}
 /* Power-on: CRT line opens, then each piece boots in order */
 .boot{position:fixed;inset:0;z-index:20;pointer-events:none;background:var(--navy);animation:crt .7s cubic-bezier(.2,.8,.2,1) forwards}
 .boot::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:var(--teal);
@@ -174,11 +198,12 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
   </header>
 
   <div class="scene on" style="--i:1.5" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun">
-    <div class="stars"></div><div class="sun"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
+    <div class="nightsky"></div><div class="stars"></div><div class="sun"></div><div class="moon"></div><div class="far"></div><div class="near"></div><div class="river"></div><div class="glint"></div>
     <div class="floor"><canvas class="grid"></canvas></div><div class="horizon"></div>
     <canvas class="runcv" role="img" aria-label="Cartoon Tristan running along a river at night, past wooded hills under a gold sun"></canvas>
     <div class="ghint" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.6" fill="currentColor"/><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg>Tap anywhere to jump</div>
     <div class="ghud" hidden aria-live="polite"><div><b>Streak</b> <span class="hs">0</span></div><div><b>Best</b> <span class="hb">0</span></div><div class="hm"></div></div>
+    <button class="sunhit" type="button" aria-pressed="false" aria-label="Set the sun"></button>
     <div class="ctrls">
     <button class="play" type="button" hidden aria-label="Play the trail game"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5 L13 8 L4 13.5 Z" fill="currentColor"/></svg><span>Play</span></button>
     <button class="paw" type="button" hidden aria-pressed="false" aria-label="Bring Hooper along"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="10.6" rx="3.4" ry="2.9" fill="currentColor"/><ellipse cx="3.6" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/><ellipse cx="6.4" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="9.6" cy="4" rx="1.5" ry="2" fill="currentColor"/><ellipse cx="12.4" cy="6.6" rx="1.5" ry="1.9" fill="currentColor"/></svg>Hooper</button>
@@ -279,6 +304,7 @@ h1.on{animation:on .5s steps(1) forwards,glitch 4.5s steps(1) 1.6s infinite;anim
 </script>
 <script src="next-up/next-up.js?v=2"></script>
 <script src="scene/outfit-fit.js?v=2"></script>
-<script src="scene/runner.js?v=26"></script>
+<script src="scene/night.js?v=1"></script>
+<script src="scene/runner.js?v=27"></script>
 <script src="gear/carousel.js?v=2"></script>
 </body></html>
