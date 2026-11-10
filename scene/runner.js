@@ -46,7 +46,7 @@ function makePuppet(imgs, parts, opt){
   var J={tuck:0,crouch:0,lift:0,w:0,pump:0,stand:0,arm:null};
   // Night gear, set by the scene: lamp draws a headlamp (strap clipped to the head art, so it fits every outfit);
   // farHand(ctx, fist, phase) draws something held in the far hand, in rig units, behind the body.
-  var gear={lamp:false,farHand:null,farArm:null};   // farArm {sw,el}: hold the far arm out (back) so what it carries clears the body
+  var gear={lamp:false,farHand:null,farArm:null};   // farArm {sw,el}: hold the far arm out in front so what it carries clears the body
   function mixv(a,b,t){return a+(b-a)*t}
   function leg(p,h){var hip=cr(HIP,p),kn=cr(KNEE,p),pf=cr(PF,p);
     if(J.tuck>0){var T=Math.PI*2;hip=mixv(hip,40+10*Math.cos(T*p),J.tuck);kn=mixv(kn,108,J.tuck);pf=mixv(pf,32,J.tuck)}
@@ -511,7 +511,7 @@ function makeDog(imgs, parts, opt){
     drawRipples(gy,dt||0,pp.groundSpeed*SCALE/CYCLE*SPD*GS);
     drawObstacles(rctx,gy);
     if(body.width!==run.width||body.height!==run.height){body.width=rim.width=run.width;body.height=rim.height=run.height}
-    var lit=NK>0.01;pp.gear.lamp=lit;if(dog)dog.gear.collar=lit;if(tv){tv.gear.farHand=lit?lantern:null;tv.gear.farArm=lit?{sw:-30,el:14}:null}lanternAt=null;
+    var lit=NK>0.01;pp.gear.lamp=lit;if(dog)dog.gear.collar=lit;if(tv){tv.gear.farHand=lit?lantern:null;tv.gear.farArm=lit?{sw:30,el:50}:null}lanternAt=null;
     bctx.setTransform(dpr,0,0,dpr,0,0);bctx.clearRect(0,0,rw,rh);bctx.save();if(FALL){var fx=rx+10;bctx.translate(fx,gy);bctx.rotate(FALL*Math.PI/180);bctx.translate(-fx,-gy)}var me=pp.draw(bctx,ph,rx,gy,SCALE);bctx.restore();var dg=drawDog(bctx,gy+1);
     if(aid){lastFist=me.fist;drawAid(bctx,gy,aid.step==='give'||aid.step==='eat'||aid.step==='still'?me.fist:null)}
     rctx.save();rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(body,0,0);rctx.restore();
