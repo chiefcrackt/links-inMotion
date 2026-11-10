@@ -1,0 +1,18 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Tristan and Travis//Wedding//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:wedding-2027-09-25@in-motion.run
+DTSTAMP:20261110T000000Z
+DTSTART:20270925T190000Z
+DTEND:20270926T040000Z
+SUMMARY:Tristan & Travis Wedding
+LOCATION:Parker\, PA
+DESCRIPTION:Arrive at 3:00 PM. Tree planting at about 3:45 PM\, then dinn
+ er\, a bonfire\, and dancing. Bring a warm layer. https://in-motion.run/
+ wedding/
+URL:https://in-motion.run/wedding/
+END:VEVENT
+END:VCALENDAR

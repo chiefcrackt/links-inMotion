@@ -385,6 +385,7 @@
     <hr class="divider">
     <h2>We're getting married</h2>
     <p>Join us in our backyard for a relaxed, rustic celebration with good food and good company. Dress however feels right to you, whether that's casual or a little dressed up. Just keep in mind we'll be outside.</p>
+    <p>We'll say our vows the week before in a small ceremony at Sprague Lake in Rocky Mountain National Park. Then we're coming home to celebrate with all of you.</p>
     <a class="btn" href="#rsvp">RSVP</a>
   </section>
 
@@ -396,17 +397,19 @@
         <div><dt class="details-label">Time</dt><dd><time datetime="15:00">3:00 PM</time></dd></div>
         <div><dt class="details-label">Place</dt><dd>Our home<br>Parker, PA</dd></div>
       </dl>
-      <p>Dress casually or dress up, whichever feels right. Just plan for the outdoors.</p>
+      <p>Arrive at 3:00 PM. At about 3:45 PM we'll plant an oak tree together, using soil from both of our parents' homes. We'd love for you to be there for it.</p>
+      <p>After that comes dinner, then a bonfire, string lights, and dancing after dark. There's no set end time, so stay as long as you like. Kids and dogs are welcome.</p>
+      <p>Dress casually or dress up, whichever feels right. Just plan for the outdoors, and bring a warm layer, since September evenings here can drop into the 40s.</p>
       <p class="calendar-links">
-        <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Tristan+%26+Travis+Wedding&amp;dates=20270925T150000/20270926T000000&amp;ctz=America/New_York&amp;location=Parker,+PA&amp;details=Saturday+September+25,+2027+at+3:00+PM" target="_blank" rel="noopener">Google Calendar</a>
-        <a href="#" id="ics-download">Apple / Outlook</a>
+        <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Tristan+%26+Travis+Wedding&amp;dates=20270925T150000/20270926T000000&amp;ctz=America/New_York&amp;location=Parker,+PA&amp;details=Arrive+at+3:00+PM.+Tree+planting+at+about+3:45+PM,+then+dinner,+a+bonfire,+and+dancing.+Bring+a+warm+layer." target="_blank" rel="noopener">Google Calendar</a>
+        <a href="tristan-and-travis-wedding.ics" download>Apple / Outlook</a>
       </p>
     </div>
   </section>
 
   <section id="rsvp">
     <h2 class="rsvp-title">RSVP</h2>
-    <p class="rsvp-intro">We would love to celebrate with you. Please let us know if you can join us.</p>
+    <p class="rsvp-intro">We would love to celebrate with you. Please let us know by August 15, 2027 if you can join us.</p>
     <iframe
       src="https://docs.google.com/forms/d/e/1FAIpQLSf6i9JbPmC1ZD2EHDs0qYiVosfg8uj6xqlgd31b1CoXb9nYZg/viewform?embedded=true"
       width="100%"
@@ -467,38 +470,6 @@
         stage.classList.remove("playing");
         stage.hidden = true;
         rex.setAttribute("aria-expanded", "false");
-      });
-
-      var btn = document.getElementById("ics-download");
-      if (!btn) return;
-      btn.addEventListener("click", function (e) {
-        e.preventDefault();
-        var lines = [
-          "BEGIN:VCALENDAR",
-          "VERSION:2.0",
-          "PRODID:-//Tristan and Travis//Wedding//EN",
-          "CALSCALE:GREGORIAN",
-          "METHOD:PUBLISH",
-          "BEGIN:VEVENT",
-          "UID:wedding-2027-09-25@in-motion.run",
-          "DTSTAMP:20261102T000000Z",
-          "DTSTART:20270925T190000Z",
-          "DTEND:20270926T040000Z",
-          "SUMMARY:Tristan & Travis Wedding",
-          "LOCATION:Parker\\, PA",
-          "DESCRIPTION:Saturday\\, September 25\\, 2027 at 3:00 PM",
-          "END:VEVENT",
-          "END:VCALENDAR"
-        ];
-        var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = url;
-        a.download = "tristan-and-travis-wedding.ics";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
       });
     })();
   </script>
