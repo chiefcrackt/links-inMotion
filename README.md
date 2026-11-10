@@ -53,7 +53,7 @@ npm test
 
 Browser checks start and stop their own preview on port 4187; stop a manually running preview first. They run on desktop and mobile sizes and cover the social links, sharing metadata, the game/Hooper/aid station/sound controls, the gear carousel, the Next up schedule, and the editor. External requests are blocked and GitHub is faked, so tests never change the real repo.
 
-The scene also has standalone checks that use the preview on port 4187 (start it with `npm run preview` first): `node tests/aid-station.cjs`, `node tests/runner-outfits.cjs`, `node tests/hooper-gait.cjs`.
+The scene also has standalone checks that use the preview on port 4187 (start it with `npm run preview` first): `node tests/aid-station.cjs`, `node tests/runner-outfits.cjs`, `node tests/hooper-gait.cjs`, `node tests/night-shift.cjs`. The page tests pin the clock to noon so night shift never changes what they see.
 
 ## Aid station
 
@@ -64,3 +64,14 @@ The **Aid station** button plays a short scene: Tristan stops, Travis walks in f
 The public page is a static GitHub Pages site using the domain in `CNAME`. Public files need no build step; npm dependencies are development tools. Publish changes through the repository's GitHub Pages deployment configuration. Keep sharing metadata in `index.html` aligned with the custom domain and keep `og-links.png` available at the site root.
 
 Gear and Next up are plain files in this repo, so there is nothing else to host or deploy.
+
+## Night shift (Easter egg)
+
+Between 10pm and 5am in the visitor's own time zone, the gold sun sinks behind the ridge, a moon rises and more stars twinkle. Tristan runs with a headlamp and a beam on the trail ahead, Hooper's collar light blinks, and at the aid station Travis carries a lantern. There's no hint on the page.
+
+- **Tap the sun** to set it any time. Tap the moon to bring the sun back. The tap only lasts for that visit.
+- **https://in-motion.run/?night** opens straight into night mode, for previews and sharing.
+- With reduced motion, it switches straight to the night picture with no sunset.
+
+The switch is `scene/night.js` (it sets the `.night` class on the scene). The headlamp, collar light and lantern are drawn in code in `scene/runner.js`. The headlamp strap is clipped to the head art, so it fits every outfit.
+

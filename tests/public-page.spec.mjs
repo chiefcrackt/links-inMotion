@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 test.beforeEach(async ({ page }) => {
   // Keep checks deterministic and prevent requests to external services.
   await page.route('https://**/*', route => route.abort());
+  // Daytime, so night shift (10pm-5am in the visitor's time) doesn't change the scene under test.
+  await page.clock.setFixedTime(new Date('2026-06-01T12:00:00'));
 });
 
 test('social destinations and sharing image remain valid', async ({ page, request }) => {
